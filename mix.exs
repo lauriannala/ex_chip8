@@ -7,8 +7,8 @@ defmodule ExChip8.MixProject do
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
-      escript: [main_module: ExChip8],
-      deps: deps()
+      deps: deps(),
+      aliases: aliases()
     ]
   end
 
@@ -22,8 +22,13 @@ defmodule ExChip8.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:ex_termbox, "~> 0.3"}
+    ]
+  end
+
+  defp aliases do
+    [
+      ex_chip8: ["run lib/ex_chip8/main.exs"]
     ]
   end
 end

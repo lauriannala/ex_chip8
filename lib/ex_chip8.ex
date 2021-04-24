@@ -1,10 +1,13 @@
 defmodule ExChip8 do
-  def main(args) do
-    options = [switches: []]
-    {_opts, _, _} = OptionParser.parse(args, options)
+  use GenServer
 
-    for n <- 1..100000, do: Screen.draw(n)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, :ok, opts)
+  end
 
-    :ok
+  def init(:ok) do
+    state = Screen.init(%{})
+
+    {:ok, state}
   end
 end
