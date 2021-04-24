@@ -2,14 +2,14 @@ defmodule Screen do
   @chip8_width 64
   @chip8_height 32
 
-  @clear_height 10000
+  @clear_height 100
 
   def draw(attrs) do
 
-    draw_command(&clear/0)
-    Process.sleep(200)
-    draw_command(&fill/0)
-    Process.sleep(400)
+    # draw_command(&clear/0)
+    # Process.sleep(10)
+    draw_command(&random/0)
+    Process.sleep(190)
 
     attrs
   end
@@ -23,12 +23,18 @@ defmodule Screen do
     |> IO.puts
   end
 
-  def clear(), do: {@clear_height, " "}
+  def clear(), do: {@clear_height, fn -> " " end}
 
-  def fill(), do: {@chip8_height, "■"}
+  def fill(), do: {@chip8_height, fn -> "■" end}
+
+  def random(), do: {@chip8_height,
+    fn ->
+      Enum.random([" ", "■"])
+    end
+  }
 
   def get_line(pixel) do
-    line = 0..@chip8_width |> Enum.map(fn _ -> pixel end)
+    line = 0..@chip8_width |> Enum.map(fn _ -> pixel.() end)
     Enum.join(line ++ ["\n"], " ")
   end
 end
