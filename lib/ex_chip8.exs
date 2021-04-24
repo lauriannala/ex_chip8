@@ -1,6 +1,7 @@
 defmodule ExChip8 do
+
   def start() do
-    Screen.run()
+    ExChip8.Screen.run()
   end
 end
 

@@ -1,4 +1,4 @@
-defmodule Screen do
+defmodule ExChip8.Screen do
 
   alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, EventManager, Event, Position}
