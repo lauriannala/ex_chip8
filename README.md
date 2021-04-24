@@ -1,6 +1,6 @@
 # ExChip8
 
-**TODO: Add description**
+Experimental project: chip8 emulator written with Elixir.
 
 ## Installation
 
