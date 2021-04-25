@@ -1,9 +1,15 @@
 defmodule ExChip8.Screen do
+  alias ExChip8.Screen
 
+  defstruct sleep_wait_period: 0,
+    chip8_height: 0,
+    chip8_width: 0
+
+  alias ExChip8.State
   alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, EventManager, Event, Position}
 
-  def init(state) do
+  def init(%State{} = state) do
     Termbox.init()
 
     {:ok, _pid} = EventManager.start_link()
@@ -11,10 +17,12 @@ defmodule ExChip8.Screen do
     state
   end
 
-  def draw(%{
-    sleep_wait_period: sleep_wait_period,
-    chip8_height: chip8_height,
-    chip8_width: chip8_width
+  def draw(%State{
+    screen: %Screen{
+      sleep_wait_period: sleep_wait_period,
+      chip8_height: chip8_height,
+      chip8_width: chip8_width
+    }
   }) do
     0..chip8_height
     |> Enum.map(fn y ->
