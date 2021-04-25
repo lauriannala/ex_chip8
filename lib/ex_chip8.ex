@@ -6,6 +6,7 @@ defmodule ExChip8 do
   @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
   @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
   @chip8_total_data_registers Application.get_env(:ex_chip8, :chip8_total_data_registers)
+  @chip8_total_stack_depth Application.get_env(:ex_chip8, :chip8_total_stack_depth)
 
   def start() do
     state = create_state()
@@ -27,5 +28,6 @@ defmodule ExChip8 do
     )
     |> ExChip8.Memory.init(@chip8_memory_size)
     |> ExChip8.Registers.init(@chip8_total_data_registers)
+    |> ExChip8.Stack.init(@chip8_total_stack_depth)
   end
 end
