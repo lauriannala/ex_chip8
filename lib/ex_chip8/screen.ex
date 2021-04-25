@@ -3,18 +3,6 @@ defmodule ExChip8.Screen do
   alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, EventManager, Event, Position}
 
-  @chip8_width 64
-  @chip8_height 32
-
-  def run() do
-    state = init(%{})
-
-    Stream.cycle([0])
-    |> Enum.map(fn _ ->
-      draw(state)
-    end)
-  end
-
   def init(state) do
     Termbox.init()
 
@@ -23,11 +11,15 @@ defmodule ExChip8.Screen do
     state
   end
 
-  def draw(_state) do
-    0..@chip8_height
+  def draw(%{
+    sleep_wait_period: sleep_wait_period,
+    chip8_height: chip8_height,
+    chip8_width: chip8_width
+  }) do
+    0..chip8_height
     |> Enum.map(fn y ->
 
-      0..@chip8_width
+      0..chip8_width
       |> Enum.map(&char/1)
       |> Enum.join(" ")
       |> String.to_charlist()
@@ -42,13 +34,12 @@ defmodule ExChip8.Screen do
     Enum.with_index('(Press <q> to quit)')
     |> Enum.map(fn {ch, x} ->
 
-      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: @chip8_height + 1}, ch: ch})
+      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: chip8_height + 1}, ch: ch})
 
     end)
 
     Termbox.present()
 
-    sleep_wait_period = 100
     receive do
       {:event, %Event{ch: ?q}} ->
         :ok = Termbox.shutdown()

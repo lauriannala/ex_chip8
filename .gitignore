@@ -25,3 +25,5 @@ ex_chip8-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+*.swp
