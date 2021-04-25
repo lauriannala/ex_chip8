@@ -28,7 +28,7 @@ defmodule ExChip8.MixProject do
 
   defp aliases do
     [
-      ex_chip8: ["run lib/ex_chip8.exs"]
+      ex_chip8: ["run lib/main.exs"]
     ]
   end
 end

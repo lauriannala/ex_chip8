@@ -9,12 +9,25 @@ defmodule ExChip8.Screen do
   alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, EventManager, Event, Position}
 
-  def init(%State{} = state) do
+  def init_screen() do
     Termbox.init()
 
     {:ok, _pid} = EventManager.start_link()
     :ok = EventManager.subscribe(self())
-    state
+  end
+
+  def init_state(%State{} = state, [
+    sleep_wait_period: sleep_wait_period,
+    chip8_height: chip8_height,
+    chip8_width: chip8_width
+  ]) do
+
+    screen = %Screen{
+      sleep_wait_period: sleep_wait_period,
+      chip8_height: chip8_height,
+      chip8_width: chip8_width
+    }
+    Map.put(state, :screen, screen)
   end
 
   def draw(%State{
