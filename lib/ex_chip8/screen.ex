@@ -2,8 +2,8 @@ defmodule ExChip8.Screen do
   alias ExChip8.Screen
 
   defstruct sleep_wait_period: 0,
-    chip8_height: 0,
-    chip8_width: 0
+            chip8_height: 0,
+            chip8_width: 0
 
   alias ExChip8.State
   alias ExTermbox.Bindings, as: Termbox
@@ -16,47 +16,42 @@ defmodule ExChip8.Screen do
     :ok = EventManager.subscribe(self())
   end
 
-  def init_state(%State{} = state, [
-    sleep_wait_period: sleep_wait_period,
-    chip8_height: chip8_height,
-    chip8_width: chip8_width
-  ]) do
-
+  def init_state(%State{} = state,
+        sleep_wait_period: sleep_wait_period,
+        chip8_height: chip8_height,
+        chip8_width: chip8_width
+      ) do
     screen = %Screen{
       sleep_wait_period: sleep_wait_period,
       chip8_height: chip8_height,
       chip8_width: chip8_width
     }
+
     Map.put(state, :screen, screen)
   end
 
   def draw(%State{
-    screen: %Screen{
-      sleep_wait_period: sleep_wait_period,
-      chip8_height: chip8_height,
-      chip8_width: chip8_width
-    }
-  }) do
+        screen: %Screen{
+          sleep_wait_period: sleep_wait_period,
+          chip8_height: chip8_height,
+          chip8_width: chip8_width
+        }
+      }) do
     0..chip8_height
     |> Enum.map(fn y ->
-
       0..chip8_width
       |> Enum.map(&char/1)
       |> Enum.join(" ")
       |> String.to_charlist()
       |> Enum.with_index()
       |> Enum.map(fn {ch, x} ->
-
         :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: y}, ch: ch})
-
       end)
     end)
 
     Enum.with_index('(Press <q> to quit)')
     |> Enum.map(fn {ch, x} ->
-
       :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: chip8_height + 1}, ch: ch})
-
     end)
 
     Termbox.present()

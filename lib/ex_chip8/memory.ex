@@ -9,6 +9,7 @@ defmodule ExChip8.Memory do
     memory = %Memory{
       memory: 0..(size - 1) |> Enum.map(fn _ -> 0x00 end)
     }
+
     Map.put(state, :memory, memory)
   end
 
@@ -25,6 +26,6 @@ defmodule ExChip8.Memory do
     byte1 = memory_get(memory, index)
     byte2 = memory_get(memory, index + 1)
 
-    (byte1 <<< 8) ||| byte2
+    byte1 <<< 8 ||| byte2
   end
 end
