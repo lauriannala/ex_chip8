@@ -5,7 +5,7 @@ defmodule ExChip8.MemoryTest do
   alias ExChip8.State
 
   describe "Empty memory" do
-    test "init/1 initializes memory list" do
+    test "init/2 initializes memory list" do
       size = 200
       state = Memory.init(%State{}, size)
       assert length(state.memory.memory) == size

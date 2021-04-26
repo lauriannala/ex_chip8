@@ -7,6 +7,13 @@ defmodule ExChip8 do
   @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
   @chip8_total_data_registers Application.get_env(:ex_chip8, :chip8_total_data_registers)
   @chip8_total_stack_depth Application.get_env(:ex_chip8, :chip8_total_stack_depth)
+  @chip8_total_keys Application.get_env(:ex_chip8, :chip8_total_keys)
+
+  @keyboard_map [
+    ?0, ?1, ?2, ?3, ?4, ?5,
+    ?6, ?7, ?8, ?9, ?a, ?b,
+    ?c, ?d, ?e, ?f
+  ]
 
   def start() do
     state = create_state()
@@ -29,5 +36,7 @@ defmodule ExChip8 do
     |> ExChip8.Memory.init(@chip8_memory_size)
     |> ExChip8.Registers.init(@chip8_total_data_registers)
     |> ExChip8.Stack.init(@chip8_total_stack_depth)
+    |> ExChip8.Keyboard.init(@chip8_total_keys)
+    |> ExChip8.Keyboard.keyboard_set_map(@keyboard_map)
   end
 end
