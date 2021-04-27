@@ -30,6 +30,12 @@ defmodule ExChip8.Screen do
     Map.put(state, :screen, screen)
   end
 
+  def screen_set(%Screen{} = screen, x, y) do
+  end
+
+  def screen_is_set?(%Screen{} = screen, x, y) do
+  end
+
   def draw(%State{
         screen: %Screen{
           sleep_wait_period: sleep_wait_period,
