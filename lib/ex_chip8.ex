@@ -16,7 +16,10 @@ defmodule ExChip8 do
   ]
 
   def start() do
-    state = create_state()
+    state =
+      %State{}
+      |> create_state()
+      |> init(@keyboard_map)
 
     ExChip8.Screen.init_screen()
 
@@ -26,8 +29,8 @@ defmodule ExChip8 do
     end)
   end
 
-  def create_state() do
-    %State{}
+  def create_state(%State{} = state) do
+    state
     |> ExChip8.Screen.init_state(
       sleep_wait_period: @sleep_wait_period,
       chip8_height: @chip8_height,
@@ -38,5 +41,16 @@ defmodule ExChip8 do
     |> ExChip8.Stack.init(@chip8_total_stack_depth)
     |> ExChip8.Keyboard.init(@chip8_total_keys)
     |> ExChip8.Keyboard.keyboard_set_map(@keyboard_map)
+  end
+
+  def init(%State{} = state, keyboard_map) do
+    sliced = Enum.slice(
+      state.memory.memory, -(length(state.memory.memory) - length(keyboard_map)), length(state.memory.memory))
+
+    memory_with_keyboard_map = keyboard_map ++ sliced
+
+    updated_memory = Map.put(state.memory, :memory, memory_with_keyboard_map)
+
+    Map.put(state, :memory, updated_memory)
   end
 end
