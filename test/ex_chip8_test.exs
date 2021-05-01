@@ -25,15 +25,15 @@ defmodule ExChip8Test do
   describe "ExChip8 with state" do
     setup [:with_state]
 
-    test "init/1 sets keyboard_map to memory", %{state: state} do
-      keyboard_map = [
-        ?0, ?1, ?2, ?3
+    test "init/1 sets character_set to memory", %{state: state} do
+      character_set = [
+        0xf0, 0x90, 0x90, 0x90
       ]
       original_length = length(state.memory.memory)
-      state = ExChip8.init(state, keyboard_map)
+      state = ExChip8.init(state, character_set)
 
       assert Enum.slice(state.memory.memory, 0..3) ==
-        keyboard_map
+        character_set
       assert Enum.slice(state.memory.memory, 4, length(state.memory.memory)) |> Enum.all?(fn x -> x == 0x00 end)
       assert original_length == length(state.memory.memory)
     end

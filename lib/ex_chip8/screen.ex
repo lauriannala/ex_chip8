@@ -70,6 +70,7 @@ defmodule ExChip8.Screen do
     } = screen,
     keyboard: %Keyboard{} = keyboard
   } = state) do
+
     0..(chip8_height - 1)
     |> Enum.map(fn y ->
       0..(chip8_width - 1)

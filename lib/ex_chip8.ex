@@ -15,11 +15,30 @@ defmodule ExChip8 do
     ?c, ?d, ?e, ?f
   ]
 
+  @default_character_set [
+    0xf0, 0x90, 0x90, 0x90, 0xf0,
+    0x20, 0x60, 0x20, 0x20, 0x70,
+    0xf0, 0x10, 0xf0, 0x80, 0xf0,
+    0xf0, 0x10, 0xf0, 0x10, 0xf0,
+    0x90, 0x90, 0xf0, 0x10, 0x10,
+    0xf0, 0x80, 0xf0, 0x10, 0xf0,
+    0xf0, 0x80, 0xf0, 0x90, 0xf0,
+    0xf0, 0x10, 0x20, 0x40, 0x40,
+    0xf0, 0x90, 0xf0, 0x90, 0xf0,
+    0xf0, 0x90, 0xf0, 0x10, 0xf0,
+    0xf0, 0x90, 0xf0, 0x90, 0x90,
+    0xe0, 0x90, 0xe0, 0x90, 0xe0,
+    0xf0, 0x80, 0x80, 0x80, 0xf0,
+    0xe0, 0x90, 0x90, 0x90, 0xe0,
+    0xf0, 0x80, 0xf0, 0x80, 0xf0,
+    0xf0, 0x80, 0xf0, 0x80, 0x80
+  ]
+
   def start() do
     state =
       %State{}
       |> create_state()
-      |> init(@keyboard_map)
+      |> init(@default_character_set)
 
     ExChip8.Screen.init_screen()
 
@@ -48,13 +67,13 @@ defmodule ExChip8 do
     |> ExChip8.Keyboard.keyboard_set_map(@keyboard_map)
   end
 
-  def init(%State{} = state, keyboard_map) do
+  def init(%State{} = state, character_set) do
     sliced = Enum.slice(
-      state.memory.memory, -(length(state.memory.memory) - length(keyboard_map)), length(state.memory.memory))
+      state.memory.memory, -(length(state.memory.memory) - length(character_set)), length(state.memory.memory))
 
-    memory_with_keyboard_map = keyboard_map ++ sliced
+    memory_with_character_set = character_set ++ sliced
 
-    updated_memory = Map.put(state.memory, :memory, memory_with_keyboard_map)
+    updated_memory = Map.put(state.memory, :memory, memory_with_character_set)
 
     Map.put(state, :memory, updated_memory)
   end
