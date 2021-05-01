@@ -18,11 +18,12 @@ defmodule ExChip8.Screen do
     :ok = EventManager.subscribe(self())
   end
 
-  def init_state(%State{} = state,
-        sleep_wait_period: sleep_wait_period,
-        chip8_height: chip8_height,
-        chip8_width: chip8_width
-      ) do
+  def init_state(
+    %State{} = state,
+    sleep_wait_period: sleep_wait_period,
+    chip8_height: chip8_height,
+    chip8_width: chip8_width
+  ) do
     screen = %Screen{
       sleep_wait_period: sleep_wait_period,
       chip8_height: chip8_height,
@@ -36,11 +37,9 @@ defmodule ExChip8.Screen do
   end
 
   def char(%Screen{} = screen, x, y) do
-    set = screen_is_set?(screen, x, y)
-    if set do
-      "■"
-    else
-      " "
+    case screen_is_set?(screen, x, y) do
+      true -> "■"
+      false -> " "
     end
   end
 
@@ -83,48 +82,52 @@ defmodule ExChip8.Screen do
       end)
     end)
 
-    Enum.with_index('(Press <q> to quit)')
-    |> Enum.map(fn {ch, x} ->
-      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: chip8_height + 1}, ch: ch})
-    end)
-
-    Enum.with_index(state.message_box)
-    |> Enum.map(fn {ch, x} ->
-      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: chip8_height + 2}, ch: ch})
-    end)
+    draw_message('(Press <q> to quit)', chip8_height + 1)
+    draw_message(state.message_box, chip8_height + 2)
 
     Termbox.present()
 
-    mailbox_update =
-      receive do
-        {:event, %Event{ch: ?q}} ->
+    mailbox = receive_messages(keyboard, sleep_wait_period)
 
-          :ok = Termbox.shutdown()
-          Process.exit(self(), :normal)
+    mailbox_update(state, mailbox)
+  end
 
-        {:event, %Event{ch: pressed_key}} ->
+  def draw_message(message, offset) do
+    Enum.with_index(message)
+    |> Enum.map(fn {ch, x} ->
+      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: offset}, ch: ch})
+    end)
+  end
 
-          index = Keyboard.keyboard_map(keyboard, pressed_key)
-          if (index != false) do
-            updated_keyboard = Keyboard.keyboard_down(keyboard, index)
+  def receive_messages(keyboard, sleep_wait_period) do
+    receive do
+      {:event, %Event{ch: ?q}} ->
 
-            {:update_keyboard, updated_keyboard, pressed_key}
-          else
-            :unknown_key
-          end
-      after
-        sleep_wait_period ->
-          :ok
-      end
+        :ok = Termbox.shutdown()
+        Process.exit(self(), :normal)
 
-    case mailbox_update do
-      :ok ->
-        Map.put(state, :message_box, '              ')
-      :unknown_key ->
-        Map.put(state, :message_box, '              ')
-      {:update_keyboard, keyboard, key} ->
-        Map.put(state, :keyboard, keyboard)
-        |> Map.put(:message_box, 'Key pressed: ' ++ [key])
+      {:event, %Event{ch: pressed_key}} ->
+
+        index = Keyboard.keyboard_map(keyboard, pressed_key)
+        if (index != false) do
+          updated_keyboard = Keyboard.keyboard_down(keyboard, index)
+
+          {:update_keyboard, updated_keyboard, pressed_key}
+        else
+          :unknown_key
+        end
+    after
+      sleep_wait_period ->
+        :ok
     end
+  end
+
+  def mailbox_update(state, {:update_keyboard, keyboard, key}) do
+    Map.put(state, :keyboard, keyboard)
+    |> Map.put(:message_box, 'Key pressed: ' ++ [key])
+  end
+
+  def mailbox_update(state, _) do
+    Map.put(state, :message_box, '              ')
   end
 end
