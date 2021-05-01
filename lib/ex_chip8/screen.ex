@@ -7,6 +7,7 @@ defmodule ExChip8.Screen do
             pixels: []
 
   alias ExChip8.State
+  alias ExChip8.Keyboard
   alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, EventManager, Event, Position}
 
@@ -63,12 +64,13 @@ defmodule ExChip8.Screen do
   end
 
   def draw(%State{
-        screen: %Screen{
-          sleep_wait_period: sleep_wait_period,
-          chip8_height: chip8_height,
-          chip8_width: chip8_width
-        } = screen
-      }) do
+    screen: %Screen{
+      sleep_wait_period: sleep_wait_period,
+      chip8_height: chip8_height,
+      chip8_width: chip8_width
+    } = screen,
+    keyboard: %Keyboard{} = keyboard
+  } = state) do
     0..(chip8_height - 1)
     |> Enum.map(fn y ->
       0..(chip8_width - 1)
@@ -86,15 +88,43 @@ defmodule ExChip8.Screen do
       :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: chip8_height + 1}, ch: ch})
     end)
 
+    Enum.with_index(state.message_box)
+    |> Enum.map(fn {ch, x} ->
+      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: chip8_height + 2}, ch: ch})
+    end)
+
     Termbox.present()
 
-    receive do
-      {:event, %Event{ch: ?q}} ->
-        :ok = Termbox.shutdown()
-        Process.exit(self(), :normal)
-    after
-      sleep_wait_period ->
-        :ok
+    mailbox_update =
+      receive do
+        {:event, %Event{ch: ?q}} ->
+
+          :ok = Termbox.shutdown()
+          Process.exit(self(), :normal)
+
+        {:event, %Event{ch: pressed_key}} ->
+
+          index = Keyboard.keyboard_map(keyboard, pressed_key)
+          if (index != false) do
+            updated_keyboard = Keyboard.keyboard_down(keyboard, index)
+
+            {:update_keyboard, updated_keyboard, pressed_key}
+          else
+            :unknown_key
+          end
+      after
+        sleep_wait_period ->
+          :ok
+      end
+
+    case mailbox_update do
+      :ok ->
+        Map.put(state, :message_box, '              ')
+      :unknown_key ->
+        Map.put(state, :message_box, '              ')
+      {:update_keyboard, keyboard, key} ->
+        Map.put(state, :keyboard, keyboard)
+        |> Map.put(:message_box, 'Key pressed: ' ++ [key])
     end
   end
 end

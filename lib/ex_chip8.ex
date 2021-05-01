@@ -29,8 +29,8 @@ defmodule ExChip8 do
     state = Map.put(state, :screen, updated_screen)
 
     Stream.cycle([0])
-    |> Enum.map(fn _ ->
-      ExChip8.Screen.draw(state)
+    |> Enum.reduce(state, fn (_, updated_state) ->
+      ExChip8.Screen.draw(updated_state)
     end)
   end
 
