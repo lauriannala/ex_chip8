@@ -3,7 +3,8 @@ defmodule ExChip8.Screen do
 
   defstruct sleep_wait_period: 0,
             chip8_height: 0,
-            chip8_width: 0
+            chip8_width: 0,
+            pixels: []
 
   alias ExChip8.State
   alias ExTermbox.Bindings, as: Termbox
@@ -24,16 +25,41 @@ defmodule ExChip8.Screen do
     screen = %Screen{
       sleep_wait_period: sleep_wait_period,
       chip8_height: chip8_height,
-      chip8_width: chip8_width
+      chip8_width: chip8_width,
+      pixels: 0..(chip8_height - 1) |> Enum.map(fn _ ->
+        0..(chip8_width - 1) |> Enum.map(fn _ -> false end)
+      end)
     }
 
     Map.put(state, :screen, screen)
   end
 
+  def char(%Screen{} = screen, x, y) do
+    set = screen_is_set?(screen, x, y)
+    if set do
+      "■"
+    else
+      " "
+    end
+  end
+
   def screen_set(%Screen{} = screen, x, y) do
+    row = Enum.at(screen.pixels, y)
+    updated_row = List.replace_at(row, x, true)
+
+    updated_pixels = List.replace_at(screen.pixels, y, updated_row)
+
+    Map.put(screen, :pixels, updated_pixels)
   end
 
   def screen_is_set?(%Screen{} = screen, x, y) do
+    row = Enum.at(screen.pixels, y)
+    if row == nil, do: raise "x: #{x} is out of bounds."
+
+    col = Enum.at(row, x)
+    if col == nil, do: raise "y: #{y} is out of bounds."
+
+    col
   end
 
   def draw(%State{
@@ -41,12 +67,12 @@ defmodule ExChip8.Screen do
           sleep_wait_period: sleep_wait_period,
           chip8_height: chip8_height,
           chip8_width: chip8_width
-        }
+        } = screen
       }) do
-    0..chip8_height
+    0..(chip8_height - 1)
     |> Enum.map(fn y ->
-      0..chip8_width
-      |> Enum.map(&char/1)
+      0..(chip8_width - 1)
+      |> Enum.map(fn x -> char(screen, x, y) end)
       |> Enum.join(" ")
       |> String.to_charlist()
       |> Enum.with_index()
@@ -70,9 +96,5 @@ defmodule ExChip8.Screen do
       sleep_wait_period ->
         :ok
     end
-  end
-
-  def char(_) do
-    Enum.random(["■", " "])
   end
 end

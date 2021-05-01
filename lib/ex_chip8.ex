@@ -23,6 +23,11 @@ defmodule ExChip8 do
 
     ExChip8.Screen.init_screen()
 
+
+    # Testing
+    updated_screen = ExChip8.Screen.screen_set(state.screen, 10, 1)
+    state = Map.put(state, :screen, updated_screen)
+
     Stream.cycle([0])
     |> Enum.map(fn _ ->
       ExChip8.Screen.draw(state)
