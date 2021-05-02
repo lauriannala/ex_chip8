@@ -4,6 +4,9 @@ defmodule ExChip8.ScreenTest do
   alias ExChip8.Screen
   alias ExChip8.State
 
+  @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
+  @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
+
   describe "Unitialized screen" do
     test "init_state/2 initializes correctly" do
       state = Screen.init_state(
@@ -53,6 +56,56 @@ defmodule ExChip8.ScreenTest do
     end
   end
 
+  describe "Initialized screen with memory" do
+    setup [:initialize_with_memory]
+
+    test "screen_draw_sprite_changeset/1 sets changes correctly", %{state: state} do
+      draw = fn ->
+        Screen.screen_draw_sprite_changeset(%{
+          screen: state.screen,
+          x: 32,
+          y: 30,
+          memory: state.memory,
+          sprite: 0x00,
+          num: 1
+        })
+      end
+
+      result = draw.()
+
+      assert result == [
+        update: %{collision: false, pixel: true, x: 32, y: 30},
+        update: %{collision: false, pixel: true, x: 33, y: 30},
+        update: %{collision: false, pixel: true, x: 34, y: 30},
+        update: %{collision: false, pixel: true, x: 35, y: 30}
+      ]
+    end
+
+    test "screen_draw_sprite_changeset/1 sets collision correctly", %{state: state} do
+
+      screen_has_pixels =
+        state.screen
+        |> Screen.screen_set(0, 0)
+        |> Screen.screen_set(1, 0)
+
+      result = Screen.screen_draw_sprite_changeset(%{
+        screen: screen_has_pixels,
+        x: 0,
+        y: 0,
+        memory: state.memory,
+        sprite: 0x00,
+        num: 1
+      })
+
+      assert result == [
+        update: %{collision: true, pixel: false, x: 0, y: 0},
+        update: %{collision: true, pixel: false, x: 1, y: 0},
+        update: %{collision: false, pixel: true, x: 2, y: 0},
+        update: %{collision: false, pixel: true, x: 3, y: 0}
+      ]
+    end
+  end
+
   defp initialize(_) do
     state = Screen.init_state(
       %State{},
@@ -60,6 +113,15 @@ defmodule ExChip8.ScreenTest do
       chip8_height: 32,
       chip8_width: 64
     )
+    %{state: state}
+  end
+
+  defp initialize_with_memory(_) do
+    %{state: state} = initialize(%{})
+    state =
+      state
+      |> ExChip8.Memory.init(@chip8_memory_size)
+      |> ExChip8.init(@default_character_set)
     %{state: state}
   end
 end

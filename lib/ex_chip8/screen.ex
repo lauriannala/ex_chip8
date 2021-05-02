@@ -8,8 +8,14 @@ defmodule ExChip8.Screen do
 
   alias ExChip8.State
   alias ExChip8.Keyboard
+  alias ExChip8.Memory
   alias ExTermbox.Bindings, as: Termbox
   alias ExTermbox.{Cell, EventManager, Event, Position}
+
+  import Bitwise
+
+  @chip8_height Application.get_env(:ex_chip8, :chip8_height)
+  @chip8_width Application.get_env(:ex_chip8, :chip8_width)
 
   def init_screen() do
     Termbox.init()
@@ -60,6 +66,64 @@ defmodule ExChip8.Screen do
     if col == nil, do: raise "y: #{y} is out of bounds."
 
     col
+  end
+
+  def screen_draw_sprite(attrs) do
+    # TODO: apply changes to state
+    screen_draw_sprite_changeset(attrs)
+  end
+
+  def screen_draw_sprite_changeset(%{
+    screen: %Screen{} = screen,
+    x: x,
+    y: y,
+    memory: %Memory{} = memory,
+    sprite: sprite,
+    num: num
+  }) do
+
+    sprite_bytes =
+      memory.memory
+      |> Enum.drop(sprite)
+      |> Enum.take(num)
+
+    changeset =
+      (0..num - 1)
+      |> Enum.map(fn ly ->
+
+        char = Enum.at(sprite_bytes, ly)
+
+        y_target = ly + y
+        row = Enum.at(screen.pixels, rem(y_target, @chip8_height))
+
+        (0..8 - 1)
+        |> Enum.map(fn lx ->
+
+          if ((char &&& (0b10000000 >>> lx)) == 0) do
+
+            {:skip, %{}}
+
+          else
+
+            x_target = lx + x
+            pixel = Enum.at(row, rem(x_target, @chip8_width))
+
+            {:update, %{
+              x: x_target,
+              y: y_target,
+              collision: pixel, # Pixel was previously set as true.
+              pixel: !pixel # Basically XOR from previous state.
+            }}
+
+          end
+
+        end)
+
+      end)
+
+    changeset
+    |> List.flatten()
+    |> Enum.filter(fn {status, _} -> status == :update end)
   end
 
   def draw(%State{
