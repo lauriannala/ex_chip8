@@ -30,11 +30,11 @@ defmodule ExChip8 do
     %{collision: _, screen: updated_screen} =
       ExChip8.Screen.screen_draw_sprite(%{
         screen: state.screen,
-        x: 64,
-        y: 31,
+        x: 62,
+        y: 30,
         memory: state.memory,
         sprite: 0x00,
-        num: 1
+        num: 5
       })
     state = Map.put(state, :screen, updated_screen)
 

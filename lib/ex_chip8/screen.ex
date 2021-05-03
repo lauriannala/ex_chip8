@@ -94,7 +94,7 @@ defmodule ExChip8.Screen do
 
     collision =
       changeset
-      |> Enum.any?(fn {:update, %{collision: collision, pixel: _, x: _, y: _y}} ->
+      |> Enum.any?(fn {:update, %{collision: collision, pixel: _, x: _, y: _}} ->
         collision == true
       end)
     %{collision: collision, screen: screen}
@@ -120,8 +120,8 @@ defmodule ExChip8.Screen do
 
         char = Enum.at(sprite_bytes, ly)
 
-        y_target = ly + y
-        row = Enum.at(screen.pixels, rem(y_target, screen.chip8_height))
+        y_target = rem(ly + y, screen.chip8_height)
+        row = Enum.at(screen.pixels, y_target)
 
         (0..8 - 1)
         |> Enum.map(fn lx ->
@@ -132,8 +132,8 @@ defmodule ExChip8.Screen do
 
           else
 
-            x_target = lx + x
-            pixel = Enum.at(row, rem(x_target, screen.chip8_width))
+            x_target = rem(lx + x, screen.chip8_width)
+            pixel = Enum.at(row, x_target)
 
             {:update, %{
               x: x_target,
@@ -172,8 +172,8 @@ defmodule ExChip8.Screen do
       end)
     end)
 
-    draw_message('(Press <q> to quit)', chip8_height + 1)
-    draw_message(state.message_box, chip8_height + 2)
+    draw_message('(Press <q> to quit)', chip8_height)
+    draw_message(state.message_box, chip8_height + 1)
 
     Termbox.present()
 
