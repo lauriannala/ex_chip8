@@ -14,9 +14,6 @@ defmodule ExChip8.Screen do
 
   import Bitwise
 
-  @chip8_height Application.get_env(:ex_chip8, :chip8_height)
-  @chip8_width Application.get_env(:ex_chip8, :chip8_width)
-
   def init_screen() do
     Termbox.init()
 
@@ -58,6 +55,15 @@ defmodule ExChip8.Screen do
     Map.put(screen, :pixels, updated_pixels)
   end
 
+  def screen_unset(%Screen{} = screen, x, y) do
+    row = Enum.at(screen.pixels, y)
+    updated_row = List.replace_at(row, x, false)
+
+    updated_pixels = List.replace_at(screen.pixels, y, updated_row)
+
+    Map.put(screen, :pixels, updated_pixels)
+  end
+
   def screen_is_set?(%Screen{} = screen, x, y) do
     row = Enum.at(screen.pixels, y)
     if row == nil, do: raise "x: #{x} is out of bounds."
@@ -68,9 +74,30 @@ defmodule ExChip8.Screen do
     col
   end
 
-  def screen_draw_sprite(attrs) do
-    # TODO: apply changes to state
-    screen_draw_sprite_changeset(attrs)
+  def screen_draw_sprite(%{
+      screen: %Screen{} = screen
+    } = attrs) do
+    changeset = screen_draw_sprite_changeset(attrs)
+
+    screen =
+      changeset
+      |> Enum.reduce(screen, fn (c, updated_screen) ->
+        {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
+
+        if pixel do
+          screen_set(updated_screen, x, y)
+        else
+          screen_unset(updated_screen, x, y)
+        end
+
+      end)
+
+    collision =
+      changeset
+      |> Enum.any?(fn {:update, %{collision: collision, pixel: _, x: _, y: _y}} ->
+        collision == true
+      end)
+    %{collision: collision, screen: screen}
   end
 
   def screen_draw_sprite_changeset(%{
@@ -94,7 +121,7 @@ defmodule ExChip8.Screen do
         char = Enum.at(sprite_bytes, ly)
 
         y_target = ly + y
-        row = Enum.at(screen.pixels, rem(y_target, @chip8_height))
+        row = Enum.at(screen.pixels, rem(y_target, screen.chip8_height))
 
         (0..8 - 1)
         |> Enum.map(fn lx ->
@@ -106,7 +133,7 @@ defmodule ExChip8.Screen do
           else
 
             x_target = lx + x
-            pixel = Enum.at(row, rem(x_target, @chip8_width))
+            pixel = Enum.at(row, rem(x_target, screen.chip8_width))
 
             {:update, %{
               x: x_target,
@@ -116,9 +143,7 @@ defmodule ExChip8.Screen do
             }}
 
           end
-
         end)
-
       end)
 
     changeset

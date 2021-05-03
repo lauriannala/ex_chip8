@@ -60,18 +60,14 @@ defmodule ExChip8.ScreenTest do
     setup [:initialize_with_memory]
 
     test "screen_draw_sprite_changeset/1 sets changes correctly", %{state: state} do
-      draw = fn ->
-        Screen.screen_draw_sprite_changeset(%{
-          screen: state.screen,
-          x: 32,
-          y: 30,
-          memory: state.memory,
-          sprite: 0x00,
-          num: 1
-        })
-      end
-
-      result = draw.()
+      result = Screen.screen_draw_sprite_changeset(%{
+        screen: state.screen,
+        x: 32,
+        y: 30,
+        memory: state.memory,
+        sprite: 0x00,
+        num: 1
+      })
 
       assert result == [
         update: %{collision: false, pixel: true, x: 32, y: 30},
@@ -103,6 +99,53 @@ defmodule ExChip8.ScreenTest do
         update: %{collision: false, pixel: true, x: 2, y: 0},
         update: %{collision: false, pixel: true, x: 3, y: 0}
       ]
+    end
+
+    test "screen_draw_sprite/1 applies changesets to state", %{state: state} do
+      %{
+        collision: collision,
+        screen: screen
+      } = Screen.screen_draw_sprite(%{
+        screen: state.screen,
+        x: 32,
+        y: 30,
+        memory: state.memory,
+        sprite: 0x00,
+        num: 1
+      })
+
+      assert collision == false
+      assert Screen.screen_is_set?(screen, 32, 30) == true
+      assert Screen.screen_is_set?(screen, 33, 30) == true
+      assert Screen.screen_is_set?(screen, 34, 30) == true
+      assert Screen.screen_is_set?(screen, 35, 30) == true
+    end
+
+    test "screen_draw_sprite/1 applies changesets to state with collision", %{state: state} do
+
+      screen_has_pixels =
+        state.screen
+        |> Screen.screen_set(0, 0)
+        |> Screen.screen_set(1, 0)
+
+      %{
+        collision: collision,
+        screen: screen
+      } = Screen.screen_draw_sprite(%{
+        screen: screen_has_pixels,
+        x: 0,
+        y: 0,
+        memory: state.memory,
+        sprite: 0x00,
+        num: 1
+      })
+
+
+      assert collision == true
+      assert Screen.screen_is_set?(screen, 0, 0) == false
+      assert Screen.screen_is_set?(screen, 1, 0) == false
+      assert Screen.screen_is_set?(screen, 2, 0) == true
+      assert Screen.screen_is_set?(screen, 3, 0) == true
     end
   end
 

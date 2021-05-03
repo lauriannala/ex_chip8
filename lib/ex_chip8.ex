@@ -27,7 +27,15 @@ defmodule ExChip8 do
 
 
     # Testing
-    updated_screen = ExChip8.Screen.screen_set(state.screen, 10, 1)
+    %{collision: _, screen: updated_screen} =
+      ExChip8.Screen.screen_draw_sprite(%{
+        screen: state.screen,
+        x: 64,
+        y: 31,
+        memory: state.memory,
+        sprite: 0x00,
+        num: 1
+      })
     state = Map.put(state, :screen, updated_screen)
 
     Stream.cycle([0])
