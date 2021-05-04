@@ -26,7 +26,8 @@ defmodule ExChip8 do
     ExChip8.Screen.init_screen()
 
 
-    # Testing
+    # Testing start
+
     %{collision: _, screen: updated_screen} =
       ExChip8.Screen.screen_draw_sprite(%{
         screen: state.screen,
@@ -37,6 +38,13 @@ defmodule ExChip8 do
         num: 5
       })
     state = Map.put(state, :screen, updated_screen)
+
+    updated_registers =
+      state.registers
+      |> Map.put(:delay_timer, 120)
+    state = Map.put(state, :registers, updated_registers)
+
+    # Testing end
 
     Stream.cycle([0])
     |> Enum.reduce(state, fn (_, updated_state) ->

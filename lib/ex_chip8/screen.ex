@@ -172,12 +172,19 @@ defmodule ExChip8.Screen do
       end)
     end)
 
-    draw_message('(Press <q> to quit)', chip8_height)
-    draw_message(state.message_box, chip8_height + 1)
-
     Termbox.present()
 
     mailbox = receive_messages(keyboard, sleep_wait_period)
+
+    state = apply_delay(state)
+
+    draw_message('(Press <q> to quit)', chip8_height)
+    draw_message(state.message_box, chip8_height + 1)
+
+    "Delay timer: " <> Integer.to_string(state.registers.delay_timer)
+    |> String.pad_trailing(18)
+    |> String.to_charlist()
+    |> draw_message(chip8_height + 2)
 
     mailbox_update(state, mailbox)
   end
@@ -187,6 +194,19 @@ defmodule ExChip8.Screen do
     |> Enum.map(fn {ch, x} ->
       :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: offset}, ch: ch})
     end)
+  end
+
+  def apply_delay(%State{} = state) do
+    if (state.registers.delay_timer == 0) do
+      state
+    else
+      :timer.sleep(100)
+
+      updated_registers =
+        state.registers
+        |> Map.update!(:delay_timer, fn t -> t - 1 end)
+      Map.put(state, :registers, updated_registers)
+    end
   end
 
   def receive_messages(keyboard, sleep_wait_period) do
