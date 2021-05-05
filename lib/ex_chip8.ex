@@ -53,6 +53,8 @@ defmodule ExChip8 do
     end)
   end
 
+  def create_state(%State{} = state), do: create_state(state, "GAME")
+
   def create_state(%State{} = state, filename) do
     state
     |> ExChip8.Screen.init_state(
