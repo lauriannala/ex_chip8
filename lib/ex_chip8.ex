@@ -22,30 +22,9 @@ defmodule ExChip8 do
       %State{}
       |> create_state(filename)
       |> init(@default_character_set)
+      |> read_file_to_memory()
 
     ExChip8.Screen.init_screen()
-
-
-    # Testing start
-
-    %{collision: _, screen: updated_screen} =
-      ExChip8.Screen.screen_draw_sprite(%{
-        screen: state.screen,
-        x: 62,
-        y: 30,
-        memory: state.memory,
-        sprite: 0x00,
-        num: 5
-      })
-    state = Map.put(state, :screen, updated_screen)
-
-    updated_registers =
-      state.registers
-      |> Map.put(:delay_timer, 15)
-      |> Map.put(:sound_timer, 30)
-    state = Map.put(state, :registers, updated_registers)
-
-    # Testing end
 
     Stream.cycle([0])
     |> Enum.reduce(state, fn (_, updated_state) ->
@@ -79,5 +58,15 @@ defmodule ExChip8 do
     updated_memory = Map.put(state.memory, :memory, memory_with_character_set)
 
     Map.put(state, :memory, updated_memory)
+  end
+
+  def read_file_to_memory(%State{} = state) do
+    game_binary = File.read!(state.filename)
+    game_bytes = :binary.bin_to_list(game_binary)
+
+    # TODO: read bytes to memory
+    IO.inspect game_bytes
+
+    state
   end
 end
