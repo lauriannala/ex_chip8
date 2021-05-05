@@ -17,10 +17,10 @@ defmodule ExChip8 do
 
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
 
-  def start() do
+  def start(filename) do
     state =
       %State{}
-      |> create_state()
+      |> create_state(filename)
       |> init(@default_character_set)
 
     ExChip8.Screen.init_screen()
@@ -53,7 +53,7 @@ defmodule ExChip8 do
     end)
   end
 
-  def create_state(%State{} = state) do
+  def create_state(%State{} = state, filename) do
     state
     |> ExChip8.Screen.init_state(
       sleep_wait_period: @sleep_wait_period,
@@ -65,6 +65,7 @@ defmodule ExChip8 do
     |> ExChip8.Stack.init(@chip8_total_stack_depth)
     |> ExChip8.Keyboard.init(@chip8_total_keys)
     |> ExChip8.Keyboard.keyboard_set_map(@keyboard_map)
+    |> Map.put(:filename, String.to_charlist(filename))
   end
 
   def init(%State{} = state, character_set) do

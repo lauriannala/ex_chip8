@@ -4,5 +4,6 @@ defmodule ExChip8.State do
             registers: %ExChip8.Registers{},
             stack: %ExChip8.Stack{},
             keyboard: %ExChip8.Keyboard{},
-            message_box: ''
+            message_box: '',
+            filename: ''
 end

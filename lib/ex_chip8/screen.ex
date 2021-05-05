@@ -189,6 +189,8 @@ defmodule ExChip8.Screen do
     |> String.to_charlist()
     |> draw_message(chip8_height + 3)
 
+    draw_message(state.filename, chip8_height + 4)
+
     state =
       state
       |> apply_delay()
