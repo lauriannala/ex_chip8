@@ -176,8 +176,6 @@ defmodule ExChip8.Screen do
 
     mailbox = receive_messages(keyboard, sleep_wait_period)
 
-    state = apply_delay(state)
-
     draw_message('(Press <q> to quit)', chip8_height)
     draw_message(state.message_box, chip8_height + 1)
 
@@ -185,6 +183,16 @@ defmodule ExChip8.Screen do
     |> String.pad_trailing(18)
     |> String.to_charlist()
     |> draw_message(chip8_height + 2)
+
+    "Sound timer: " <> Integer.to_string(state.registers.sound_timer)
+    |> String.pad_trailing(18)
+    |> String.to_charlist()
+    |> draw_message(chip8_height + 3)
+
+    state =
+      state
+      |> apply_delay()
+      |> apply_sound()
 
     mailbox_update(state, mailbox)
   end
@@ -205,6 +213,17 @@ defmodule ExChip8.Screen do
       updated_registers =
         state.registers
         |> Map.update!(:delay_timer, fn t -> t - 1 end)
+      Map.put(state, :registers, updated_registers)
+    end
+  end
+
+  def apply_sound(%State{} = state) do
+    if (state.registers.sound_timer == 0) do
+      state
+    else
+      updated_registers =
+        state.registers
+        |> Map.update!(:sound_timer, fn t -> t - 1 end)
       Map.put(state, :registers, updated_registers)
     end
   end

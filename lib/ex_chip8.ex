@@ -41,7 +41,8 @@ defmodule ExChip8 do
 
     updated_registers =
       state.registers
-      |> Map.put(:delay_timer, 120)
+      |> Map.put(:delay_timer, 15)
+      |> Map.put(:sound_timer, 30)
     state = Map.put(state, :registers, updated_registers)
 
     # Testing end
