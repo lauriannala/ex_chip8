@@ -158,7 +158,7 @@ defmodule ExChip8.Screen do
       chip8_width: chip8_width
     } = screen,
     keyboard: %Keyboard{} = keyboard
-  } = state) do
+  } = state, opcode) do
 
     0..(chip8_height - 1)
     |> Enum.map(fn y ->
@@ -190,6 +190,9 @@ defmodule ExChip8.Screen do
     |> draw_message(chip8_height + 3)
 
     draw_message(state.filename, chip8_height + 4)
+
+    Integer.to_charlist(opcode, 16)
+    |> draw_message(chip8_height + 5)
 
     state =
       state

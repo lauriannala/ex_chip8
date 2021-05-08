@@ -16,19 +16,26 @@ defmodule ExChip8 do
   ]
 
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
+  @chip8_program_load_address Application.get_env(:ex_chip8, :chip8_program_load_address)
 
   def start(filename) do
     state =
       %State{}
       |> create_state(filename)
       |> init(@default_character_set)
-      |> read_file_to_memory()
+      |> read_file_to_memory(@chip8_program_load_address)
 
     ExChip8.Screen.init_screen()
 
     Stream.cycle([0])
     |> Enum.reduce(state, fn (_, updated_state) ->
-      ExChip8.Screen.draw(updated_state)
+
+      opcode = ExChip8.Memory.memory_get_short(updated_state.memory, updated_state.registers.pc)
+
+      updated_state
+      |> ExChip8.Screen.draw(opcode)
+      |> ExChip8.Instructions.exec(opcode)
+      |> Map.update!(:registers, &(Map.update!(&1, :pc, fn counter -> counter + 2 end)))
     end)
   end
 
@@ -60,13 +67,25 @@ defmodule ExChip8 do
     Map.put(state, :memory, updated_memory)
   end
 
-  def read_file_to_memory(%State{} = state) do
+  def read_file_to_memory(%State{} = state, load_address) do
     game_binary = File.read!(state.filename)
     game_bytes = :binary.bin_to_list(game_binary)
 
-    # TODO: read bytes to memory
-    IO.inspect game_bytes
+    updated_memory =
+      game_bytes
+      |> Enum.with_index()
+      |> Enum.reduce(state.memory, fn ({byte, byte_index}, memory) ->
+
+        index = byte_index + load_address
+        ExChip8.Memory.memory_set(memory, index, byte)
+      end)
+
+    updated_registers =
+      state.registers
+      |> Map.put(:pc, load_address)
 
     state
+    |> Map.put(:memory, updated_memory)
+    |> Map.put(:registers, updated_registers)
   end
 end
