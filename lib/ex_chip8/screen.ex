@@ -214,7 +214,7 @@ defmodule ExChip8.Screen do
     |> draw_message(chip8_height + 5)
 
     "Instruction: " <> state.instruction
-    |> String.pad_trailing(18)
+    |> String.pad_trailing(50)
     |> String.to_charlist()
     |> draw_message(chip8_height + 6)
 
