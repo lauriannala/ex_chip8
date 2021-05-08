@@ -27,10 +27,19 @@ defmodule ExChip8 do
 
     ExChip8.Screen.init_screen()
 
+    # Testing start
+    state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 0, 0))
+    state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 1, 0))
+    state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 2, 0))
+    # Testing end
+
     Stream.cycle([0])
     |> Enum.reduce(state, fn (_, updated_state) ->
 
       opcode = ExChip8.Memory.memory_get_short(updated_state.memory, updated_state.registers.pc)
+      # Testing start
+      # opcode = 0x00e0
+      # Testing end
 
       updated_state
       |> ExChip8.Screen.draw(opcode)

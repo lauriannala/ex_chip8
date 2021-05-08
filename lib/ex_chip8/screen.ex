@@ -55,6 +55,25 @@ defmodule ExChip8.Screen do
     Map.put(screen, :pixels, updated_pixels)
   end
 
+  def screen_clear(%Screen{
+    chip8_height: chip8_height,
+    chip8_width: chip8_width
+  } = screen) do
+
+    changeset =
+      0..(chip8_height - 1)
+      |> Enum.map(fn y ->
+        0..(chip8_width - 1)
+        |> Enum.map(fn x -> {x, y} end)
+      end)
+      |> List.flatten()
+
+    changeset
+    |> Enum.reduce(screen, fn ({x, y}, updated_screen) ->
+      screen_unset(updated_screen, x, y)
+    end)
+  end
+
   def screen_unset(%Screen{} = screen, x, y) do
     row = Enum.at(screen.pixels, y)
     updated_row = List.replace_at(row, x, false)
@@ -193,6 +212,11 @@ defmodule ExChip8.Screen do
 
     Integer.to_charlist(opcode, 16)
     |> draw_message(chip8_height + 5)
+
+    "Instruction: " <> state.instruction
+    |> String.pad_trailing(18)
+    |> String.to_charlist()
+    |> draw_message(chip8_height + 6)
 
     state =
       state
