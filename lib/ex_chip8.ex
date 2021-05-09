@@ -38,12 +38,12 @@ defmodule ExChip8 do
 
       opcode = ExChip8.Memory.memory_get_short(updated_state.memory, updated_state.registers.pc)
       # Testing start
-      # opcode = 0x3511
+      # opcode = 0x6144
       # Testing end
 
       updated_state
-      |> ExChip8.Screen.draw(opcode)
       |> ExChip8.Instructions.exec(opcode)
+      |> ExChip8.Screen.draw(opcode)
       |> Map.update!(:registers, &(Map.update!(&1, :pc, fn counter -> counter + 2 end)))
     end)
   end

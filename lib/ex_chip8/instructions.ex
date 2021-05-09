@@ -78,15 +78,67 @@ defmodule ExChip8.Instructions do
     end
 
     {
-      "SE Vx - byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
+      "SE Vx (3xkk) - byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
       Map.replace!(state, :registers, updated_registers)
     }
   end
 
-  # TODO
   # SE Vx, byte - 4xkk, Skip next instruction if Vx!=kk.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    kk: kk
+  }) when (opcode &&& 0xF000) == 0x4000 do
+    reg_val = Enum.at(state.registers.v, x)
 
-  defp _exec(%State{} = state, _opcode, _) do
-    {"UNKNOWN", state}
+    updated_registers = case reg_val != kk do
+      true ->
+        Map.update!(state.registers, :pc, fn counter -> counter + 2 end)
+      false ->
+        state.registers
+    end
+
+    {
+      "SE Vx (4xkk) - byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # SE Vx, Vy - 5xy0, Skip next instruction if Vx == Vy.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF000) == 0x5000 do
+    vx = Enum.at(state.registers.v, x)
+    vy = Enum.at(state.registers.v, y)
+
+    updated_registers = case vx == vy do
+      true ->
+        Map.update!(state.registers, :pc, fn counter -> counter + 2 end)
+      false ->
+        state.registers
+    end
+
+    {
+      "SE Vx, Vy (5xy0) - byte, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD Vx, byte - 6xkk, Vx = kk.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    kk: kk
+  }) when (opcode &&& 0xF000) == 0x6000 do
+    updated_v_register = List.replace_at(state.registers.v, x, kk)
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "LD Vx, byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  defp _exec(%State{} = state, opcode, _) do
+    {"UNKNOWN: #{Integer.to_charlist(opcode, 16)}", state}
   end
 end
