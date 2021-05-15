@@ -11,15 +11,13 @@ defmodule ExChip8.Instructions do
     y = (opcode >>> 4) &&& 0x00F
     kk = opcode &&& 0x00FF
     n = opcode &&& 0x000F
-    final_four_bits = opcode &&& 0x00F
 
     {instruction, updated_state} = _exec(state, opcode, %{
       nnn: nnn,
       x: x,
       y: y,
       kk: kk,
-      n: n,
-      final_four_bits: final_four_bits
+      n: n
     })
 
     updated_state
@@ -134,6 +132,53 @@ defmodule ExChip8.Instructions do
 
     {
       "LD Vx, byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # ADD Vx, byte - 7xkk, Set Vx = Vx + kk.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    kk: kk
+  }) when (opcode &&& 0xF000) == 0x7000 do
+    updated_v_register = List.update_at(state.registers.v, x, fn v -> v + kk end)
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "ADD Vx, byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD Vx, Vy - 8xy0, Vx = Vy.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8000 do
+    y_value = Enum.at(state.registers.v, y)
+    updated_v_register = List.replace_at(state.registers.v, x, y_value)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "LD Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # OR Vx, Vy - 8xy1, Performs an bitwise OR on Vx and Vy and stores the result in Vx.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8001 do
+    y_value = Enum.at(state.registers.v, y)
+    updated_v_register =
+      List.update_at(state.registers.v, x, fn x_value -> x_value ||| y_value end)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "OR Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
       Map.replace!(state, :registers, updated_registers)
     }
   end
