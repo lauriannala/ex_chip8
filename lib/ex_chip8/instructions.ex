@@ -183,6 +183,64 @@ defmodule ExChip8.Instructions do
     }
   end
 
+  #  AND Vx, Vy - 8xy2, Performs an bitwise AND on Vx and Vy and stores the result in Vx.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8002 do
+    y_value = Enum.at(state.registers.v, y)
+    updated_v_register =
+      List.update_at(state.registers.v, x, fn x_value -> x_value &&& y_value end)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "AND Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # XOR Vx, Vy - 8xy3, Performs an bitwise XOR on Vx and Vy and stores the result in Vx.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8003 do
+    y_value = Enum.at(state.registers.v, y)
+    updated_v_register =
+      List.update_at(state.registers.v, x, fn x_value -> x_value ^^^ y_value end)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "XOR Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # ADD Vx, Vy - 8xy4, Set Vx = Vx + Vy, set VF = carry.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8004 do
+    y_value = Enum.at(state.registers.v, y)
+
+    updated_x = Enum.at(state.registers.v, x) + y_value
+
+    updated_vf = updated_x > 0xFF
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+      |> List.replace_at(0x0F, updated_vf)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "ADD Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
   defp _exec(%State{} = state, opcode, _) do
     {"UNKNOWN: #{Integer.to_charlist(opcode, 16)}", state}
   end
