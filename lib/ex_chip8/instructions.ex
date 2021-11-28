@@ -236,7 +236,7 @@ defmodule ExChip8.Instructions do
     y_value = Enum.at(state.registers.v, y)
 
     updated_v_register =
-      List.update_at(state.registers.v, x, fn x_value -> x_value ^^^ y_value end)
+      List.update_at(state.registers.v, x, fn x_value -> bxor(x_value, y_value) end)
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
