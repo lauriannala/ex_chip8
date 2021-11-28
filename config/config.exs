@@ -10,6 +10,8 @@ config :ex_chip8, :chip8_total_data_registers, 16
 config :ex_chip8, :chip8_total_stack_depth, 16
 config :ex_chip8, :chip8_total_keys, 16
 config :ex_chip8, :chip8_program_load_address, 0x200
+config :ex_chip8, :chip8_program_load_address, 0x200
+config :ex_chip8, :chip8_default_sprite_height, 5
 config :ex_chip8, :chip8_default_character_set, [
   0xf0, 0x90, 0x90, 0x90, 0xf0,
   0x20, 0x60, 0x20, 0x20, 0x70,

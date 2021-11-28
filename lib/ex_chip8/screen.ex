@@ -268,9 +268,11 @@ defmodule ExChip8.Screen do
 
         index = Keyboard.keyboard_map(keyboard, pressed_key)
         if (index != false) do
-          updated_keyboard = Keyboard.keyboard_down(keyboard, index)
+          updated_keyboard =
+            Keyboard.keyboard_down(keyboard, index)
+            |> Map.put(:pressed_key, pressed_key)
 
-          {:update_keyboard, updated_keyboard, pressed_key}
+          {:update_keyboard, updated_keyboard}
         else
           :unknown_key
         end
@@ -280,9 +282,9 @@ defmodule ExChip8.Screen do
     end
   end
 
-  def mailbox_update(state, {:update_keyboard, keyboard, key}) do
+  def mailbox_update(state, {:update_keyboard, keyboard}) do
     Map.put(state, :keyboard, keyboard)
-    |> Map.put(:message_box, 'Key pressed: ' ++ [key])
+    |> Map.put(:message_box, 'Key pressed: ' ++ [keyboard.pressed_key])
   end
 
   def mailbox_update(state, _) do

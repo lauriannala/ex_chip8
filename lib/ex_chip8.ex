@@ -28,9 +28,9 @@ defmodule ExChip8 do
     ExChip8.Screen.init_screen()
 
     # Testing start
-    state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 0, 0))
-    state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 1, 0))
-    state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 2, 0))
+    # state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 0, 0))
+    # state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 1, 0))
+    # state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 2, 0))
     # Testing end
 
     Stream.cycle([0])
@@ -38,13 +38,24 @@ defmodule ExChip8 do
 
       opcode = ExChip8.Memory.memory_get_short(updated_state.memory, updated_state.registers.pc)
       # Testing start
-      opcode = 0x812E
+      # opcode = 0xF165
       # Testing end
 
-      updated_state
-      |> ExChip8.Instructions.exec(opcode)
-      |> ExChip8.Screen.draw(opcode)
-      |> Map.update!(:registers, &(Map.update!(&1, :pc, fn counter -> counter + 2 end)))
+      next_cycle =
+        updated_state
+        |> ExChip8.Instructions.exec(opcode)
+
+
+      case next_cycle do
+        :wait_for_key_press ->
+          updated_state
+          |> ExChip8.Screen.draw(opcode)
+        _ ->
+          next_cycle
+          |> ExChip8.Screen.draw(opcode)
+          |> Map.update!(:registers, &(Map.update!(&1, :pc, fn counter -> counter + 2 end)))
+      end
+
     end)
   end
 

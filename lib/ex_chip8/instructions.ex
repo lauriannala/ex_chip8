@@ -5,14 +5,16 @@ defmodule ExChip8.Instructions do
 
   import Bitwise
 
+  @chip8_default_sprite_height Application.get_env(:ex_chip8, :chip8_default_sprite_height)
+
   def exec(%State{} = state, opcode) do
     nnn = opcode &&& 0x0FFF
-    x = (opcode >>> 8) &&& 0x00F
-    y = (opcode >>> 4) &&& 0x00F
+    x = (opcode >>> 8) &&& 0x000F
+    y = (opcode >>> 4) &&& 0x000F
     kk = opcode &&& 0x00FF
     n = opcode &&& 0x000F
 
-    {instruction, updated_state} = _exec(state, opcode, %{
+    exec_result = _exec(state, opcode, %{
       nnn: nnn,
       x: x,
       y: y,
@@ -20,8 +22,13 @@ defmodule ExChip8.Instructions do
       n: n
     })
 
-    updated_state
-    |> Map.replace!(:instruction, instruction)
+    case exec_result do
+      {instruction, updated_state} ->
+        updated_state
+        |> Map.replace!(:instruction, instruction)
+      :wait_for_key_press -> :wait_for_key_press
+    end
+
   end
 
   # CLS - Clear the display.
@@ -296,7 +303,7 @@ defmodule ExChip8.Instructions do
     y_value = Enum.at(state.registers.v, y)
     x_value = Enum.at(state.registers.v, x)
 
-    updated_vf = y_value > x_value;
+    updated_vf = y_value > x_value
     updated_x = y_value - x_value
 
     updated_v_register =
@@ -316,10 +323,10 @@ defmodule ExChip8.Instructions do
     x: x,
     y: y
   }) when (opcode &&& 0xF00F) == 0x800E do
-    x_value = Enum.at(state.registers.v, x)
+    vx = Enum.at(state.registers.v, x)
 
-    updated_vf = x_value &&& 0b10000000;
-    updated_x = x_value * 2
+    updated_vf = vx &&& 0b10000000
+    updated_x = vx * 2
 
     updated_v_register =
       state.registers.v
@@ -333,7 +340,293 @@ defmodule ExChip8.Instructions do
     }
   end
 
+  # SNE Vx, Vy - 9xy0, Skip next instruction if Vx != Vy.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF000) == 0x9000 do
+    vx = Enum.at(state.registers.v, x)
+    vy = Enum.at(state.registers.v, y)
+
+    updated_registers = case vx != vy do
+      true ->
+        Map.update!(state.registers, :pc, fn counter -> counter + 2 end)
+      false ->
+        state.registers
+    end
+
+    {
+      "SNE Vx, Vy (9xy0) - byte, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD I, addr - Annn, Sets the I register to nnn.
+  defp _exec(%State{} = state, opcode, %{
+    nnn: nnn
+  }) when (opcode &&& 0xF000) == 0xA000 do
+    updated_registers = Map.replace!(state.registers, :i, nnn)
+    {"LD I, addr - Annn: #{Integer.to_charlist(nnn, 16)}", Map.replace!(state, :registers, updated_registers)}
+  end
+
+  # RND Vx, byte - Cxkk
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    kk: kk
+  }) when (opcode &&& 0xF000) == 0xC000 do
+    updated_x = :rand.uniform(255) &&& kk
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+    {
+      "RND Vx, byte x: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # DRW Vx, Vy, nibble - Dxyn, Draws sprite to the screen.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y,
+    n: n
+  }) when (opcode &&& 0xF000) == 0xD000 do
+    sprite = state.registers.i
+
+    %{collision: updated_vf, screen: updated_screen} =
+      Screen.screen_draw_sprite(%{
+        screen: state.screen,
+        x: x,
+        y: y,
+        memory: state.memory,
+        sprite: sprite,
+        num: n
+      })
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(0x0F, updated_vf)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    updated_state =
+      state
+      |> Map.replace!(:registers, updated_registers)
+      |> Map.replace!(:screen, updated_screen)
+
+    {
+      "DRW Vx, Vy, nibble: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      updated_state
+    }
+  end
+
+  # SKP Vx - Ex9E, Skip the next instruction if the key with the value of Vx is pressed.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xE09E do
+    vx = Enum.at(state.registers.v, x)
+
+    updated_registers = case ExChip8.Keyboard.keyboard_is_down(state.keyboard, vx) do
+      true ->
+        Map.update!(state.registers, :pc, fn counter -> counter + 2 end)
+      false ->
+        state.registers
+    end
+
+    {
+      "SKP Vx - Ex9E: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # SKP Vx - ExA1, Skip the next instruction if the key with the value of Vx is NOT pressed.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xE0A1 do
+    vx = Enum.at(state.registers.v, x)
+
+    updated_registers = case (not ExChip8.Keyboard.keyboard_is_down(state.keyboard, vx)) do
+      true ->
+        Map.update!(state.registers, :pc, fn counter -> counter + 2 end)
+      false ->
+        state.registers
+    end
+
+    {
+      "SKP Vx - ExA1: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD Vx, DT - Fx07, Set Vx to the delay timer value.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF007 do
+    updated_x = state.registers.delay_timer
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "LD Vx, DT - Fx07: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD Vx, K - fx0A.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF00A do
+    pressed_key = state.keyboard.pressed_key
+    pressed_key_index = ExChip8.Keyboard.keyboard_map(state.keyboard, pressed_key)
+
+    case pressed_key_index do
+      false -> :wait_for_key_press
+      _ ->
+        updated_v_register =
+          state.registers.v
+          |> List.replace_at(x, pressed_key_index)
+
+        updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+        {
+          "LD Vx, K - Fx0A: #{Integer.to_charlist(x, 16)}, pressed_key: #{pressed_key_index}",
+          Map.replace!(state, :registers, updated_registers)
+        }
+    end
+  end
+
+  # LD CT, Vx, K - Fx15, Set delay_timer to Vx.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF015 do
+    vx = Enum.at(state.registers.v, x)
+
+    updated_registers = Map.replace!(state.registers, :delay_timer, vx)
+
+    {
+      "LD CT, Vx, K - Fx15: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD ST, Vx, K - Fx18, Set sound_timer to Vx.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF018 do
+    vx = Enum.at(state.registers.v, x)
+
+    updated_registers = Map.replace!(state.registers, :sound_timer, vx)
+
+    {
+      "LD ST, Vx, K - Fx15: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # ADD I, Vx - Fx1E.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF01E do
+    vx = Enum.at(state.registers.v, x)
+
+    updated_registers =
+      state.registers
+      |> Map.update!(:i, fn i_value -> i_value + vx end)
+
+    {
+      "ADD I, Vx - Fx1E: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD F, Vx - Fx29.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF029 do
+    vx = Enum.at(state.registers.v, x)
+
+    updated_registers =
+      state.registers
+      |> Map.replace!(:i, vx * @chip8_default_sprite_height)
+
+    {
+      "LD F, Vx - Fx29: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # LD B, Vx - Fx33.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF033 do
+    vx = Enum.at(state.registers.v, x)
+
+    hundreds = vx |> div(100)
+    tens = vx |> div(10) |> rem(10)
+    units = vx |> rem(10)
+
+    updated_memory =
+      state.memory
+      |> ExChip8.Memory.memory_set(state.registers.i, hundreds)
+      |> ExChip8.Memory.memory_set(state.registers.i + 1, tens)
+      |> ExChip8.Memory.memory_set(state.registers.i + 2, units)
+
+    {
+      "LD F, Vx - Fx29: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :memory, updated_memory)
+    }
+  end
+
+  # LD [I], Vx - Fx55
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF055 do
+    updated_memory =
+      0..(x - 1)
+      |> Enum.reduce(state.memory, fn (i, updated_memory) ->
+        vi = Enum.at(state.registers.v, i)
+
+        updated_memory
+        |> ExChip8.Memory.memory_set(state.registers.i + i, vi)
+      end)
+
+    {
+      "LD [I], Vx - Fx55: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :memory, updated_memory)
+    }
+  end
+
+  # LD Vx, [I] - Fx65
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+  }) when (opcode &&& 0xF0FF) == 0xF065 do
+    updated_registers =
+      0..(x - 1)
+      |> Enum.reduce(state.registers, fn (i, updated_registers) ->
+
+        value_from_memory = ExChip8.Memory.memory_get(state.memory, state.registers.i + 1)
+
+        updated_v_register =
+          state.registers.v
+          |> List.replace_at(i, value_from_memory)
+
+        Map.replace!(updated_registers, :v, updated_v_register)
+
+      end)
+
+    {
+      "LD Vx, [I] - Fx65: #{Integer.to_charlist(x, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
   defp _exec(%State{} = state, opcode, _) do
-    {"UNKNOWN: #{Integer.to_charlist(opcode, 16)}", state}
+    raise "UNKNOWN: #{Integer.to_charlist(opcode, 16)}, #{inspect state}"
   end
 end

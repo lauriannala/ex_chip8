@@ -3,7 +3,8 @@ defmodule ExChip8.Keyboard do
   alias ExChip8.State
 
   defstruct keyboard: [],
-            keyboard_map: []
+            keyboard_map: [],
+            pressed_key: false
 
   def init(%State{} = state, k_size) do
     keyboard = %Keyboard{
