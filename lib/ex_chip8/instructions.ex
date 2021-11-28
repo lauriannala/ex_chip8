@@ -241,6 +241,98 @@ defmodule ExChip8.Instructions do
     }
   end
 
+  # SUB Vx, Vy - 8xy5, Set Vx = Vx - Vy, set VF = Not borrow.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8005 do
+    y_value = Enum.at(state.registers.v, y)
+    x_value = Enum.at(state.registers.v, x)
+
+    updated_x = x_value - y_value
+
+    updated_vf = x_value > y_value
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+      |> List.replace_at(0x0F, updated_vf)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+
+    {
+      "SUB Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # SHR Vx {, Vy} - 8xy6.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8006 do
+    x_value = Enum.at(state.registers.v, x)
+
+    updated_x = div(x_value, 2)
+
+    updated_vf = x_value &&& 0x01
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+      |> List.replace_at(0x0F, updated_vf)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+    {
+      "SHR Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}", Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # SUBN Vx, Vy - 8xy7.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x8007 do
+    y_value = Enum.at(state.registers.v, y)
+    x_value = Enum.at(state.registers.v, x)
+
+    updated_vf = y_value > x_value;
+    updated_x = y_value - x_value
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+      |> List.replace_at(0x0F, updated_vf)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+    {
+      "SUBN Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
+  # SHL Vx {, Vy} - 8xyE.
+  defp _exec(%State{} = state, opcode, %{
+    x: x,
+    y: y
+  }) when (opcode &&& 0xF00F) == 0x800E do
+    x_value = Enum.at(state.registers.v, x)
+
+    updated_vf = x_value &&& 0b10000000;
+    updated_x = x_value * 2
+
+    updated_v_register =
+      state.registers.v
+      |> List.replace_at(x, updated_x)
+      |> List.replace_at(0x0F, updated_vf)
+
+    updated_registers = Map.replace!(state.registers, :v, updated_v_register)
+    {
+      "SHL Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
+      Map.replace!(state, :registers, updated_registers)
+    }
+  end
+
   defp _exec(%State{} = state, opcode, _) do
     {"UNKNOWN: #{Integer.to_charlist(opcode, 16)}", state}
   end

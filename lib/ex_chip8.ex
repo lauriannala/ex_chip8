@@ -38,7 +38,7 @@ defmodule ExChip8 do
 
       opcode = ExChip8.Memory.memory_get_short(updated_state.memory, updated_state.registers.pc)
       # Testing start
-      opcode = 0x8124
+      opcode = 0x812E
       # Testing end
 
       updated_state
