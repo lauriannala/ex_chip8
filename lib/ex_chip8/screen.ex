@@ -22,18 +22,20 @@ defmodule ExChip8.Screen do
   end
 
   def init_state(
-    %State{} = state,
-    sleep_wait_period: sleep_wait_period,
-    chip8_height: chip8_height,
-    chip8_width: chip8_width
-  ) do
+        %State{} = state,
+        sleep_wait_period: sleep_wait_period,
+        chip8_height: chip8_height,
+        chip8_width: chip8_width
+      ) do
     screen = %Screen{
       sleep_wait_period: sleep_wait_period,
       chip8_height: chip8_height,
       chip8_width: chip8_width,
-      pixels: 0..(chip8_height - 1) |> Enum.map(fn _ ->
-        0..(chip8_width - 1) |> Enum.map(fn _ -> false end)
-      end)
+      pixels:
+        0..(chip8_height - 1)
+        |> Enum.map(fn _ ->
+          0..(chip8_width - 1) |> Enum.map(fn _ -> false end)
+        end)
     }
 
     Map.put(state, :screen, screen)
@@ -55,11 +57,12 @@ defmodule ExChip8.Screen do
     Map.put(screen, :pixels, updated_pixels)
   end
 
-  def screen_clear(%Screen{
-    chip8_height: chip8_height,
-    chip8_width: chip8_width
-  } = screen) do
-
+  def screen_clear(
+        %Screen{
+          chip8_height: chip8_height,
+          chip8_width: chip8_width
+        } = screen
+      ) do
     changeset =
       0..(chip8_height - 1)
       |> Enum.map(fn y ->
@@ -69,7 +72,7 @@ defmodule ExChip8.Screen do
       |> List.flatten()
 
     changeset
-    |> Enum.reduce(screen, fn ({x, y}, updated_screen) ->
+    |> Enum.reduce(screen, fn {x, y}, updated_screen ->
       screen_unset(updated_screen, x, y)
     end)
   end
@@ -85,22 +88,24 @@ defmodule ExChip8.Screen do
 
   def screen_is_set?(%Screen{} = screen, x, y) do
     row = Enum.at(screen.pixels, y)
-    if row == nil, do: raise "x: #{x} is out of bounds."
+    if row == nil, do: raise("x: #{x} is out of bounds.")
 
     col = Enum.at(row, x)
-    if col == nil, do: raise "y: #{y} is out of bounds."
+    if col == nil, do: raise("y: #{y} is out of bounds.")
 
     col
   end
 
-  def screen_draw_sprite(%{
-      screen: %Screen{} = screen
-    } = attrs) do
+  def screen_draw_sprite(
+        %{
+          screen: %Screen{} = screen
+        } = attrs
+      ) do
     changeset = screen_draw_sprite_changeset(attrs)
 
     screen =
       changeset
-      |> Enum.reduce(screen, fn (c, updated_screen) ->
+      |> Enum.reduce(screen, fn c, updated_screen ->
         {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
 
         if pixel do
@@ -108,7 +113,6 @@ defmodule ExChip8.Screen do
         else
           screen_unset(updated_screen, x, y)
         end
-
       end)
 
     collision =
@@ -116,51 +120,48 @@ defmodule ExChip8.Screen do
       |> Enum.any?(fn {:update, %{collision: collision, pixel: _, x: _, y: _}} ->
         collision == true
       end)
+
     %{collision: collision, screen: screen}
   end
 
   def screen_draw_sprite_changeset(%{
-    screen: %Screen{} = screen,
-    x: x,
-    y: y,
-    memory: %Memory{} = memory,
-    sprite: sprite,
-    num: num
-  }) do
-
+        screen: %Screen{} = screen,
+        x: x,
+        y: y,
+        memory: %Memory{} = memory,
+        sprite: sprite,
+        num: num
+      }) do
     sprite_bytes =
       memory.memory
       |> Enum.drop(sprite)
       |> Enum.take(num)
 
     changeset =
-      (0..num - 1)
+      0..(num - 1)
       |> Enum.map(fn ly ->
-
         char = Enum.at(sprite_bytes, ly)
 
         y_target = rem(ly + y, screen.chip8_height)
         row = Enum.at(screen.pixels, y_target)
 
-        (0..8 - 1)
+        0..(8 - 1)
         |> Enum.map(fn lx ->
-
-          if ((char &&& (0b10000000 >>> lx)) == 0) do
-
+          if (char &&& 0b10000000 >>> lx) == 0 do
             {:skip, %{}}
-
           else
-
             x_target = rem(lx + x, screen.chip8_width)
             pixel = Enum.at(row, x_target)
 
-            {:update, %{
-              x: x_target,
-              y: y_target,
-              collision: pixel, # Pixel was previously set as true.
-              pixel: !pixel # Basically XOR from previous state.
-            }}
-
+            {:update,
+             %{
+               x: x_target,
+               y: y_target,
+               # Pixel was previously set as true.
+               collision: pixel,
+               # Basically XOR from previous state.
+               pixel: !pixel
+             }}
           end
         end)
       end)
@@ -170,15 +171,18 @@ defmodule ExChip8.Screen do
     |> Enum.filter(fn {status, _} -> status == :update end)
   end
 
-  def draw(%State{
-    screen: %Screen{
-      sleep_wait_period: sleep_wait_period,
-      chip8_height: chip8_height,
-      chip8_width: chip8_width
-    } = screen,
-    keyboard: %Keyboard{} = keyboard
-  } = state, opcode) do
-
+  def draw(
+        %State{
+          screen:
+            %Screen{
+              sleep_wait_period: sleep_wait_period,
+              chip8_height: chip8_height,
+              chip8_width: chip8_width
+            } = screen,
+          keyboard: %Keyboard{} = keyboard
+        } = state,
+        opcode
+      ) do
     0..(chip8_height - 1)
     |> Enum.map(fn y ->
       0..(chip8_width - 1)
@@ -198,12 +202,12 @@ defmodule ExChip8.Screen do
     draw_message('(Press <q> to quit)', chip8_height)
     draw_message(state.message_box, chip8_height + 1)
 
-    "Delay timer: " <> Integer.to_string(state.registers.delay_timer)
+    ("Delay timer: " <> Integer.to_string(state.registers.delay_timer))
     |> String.pad_trailing(18)
     |> String.to_charlist()
     |> draw_message(chip8_height + 2)
 
-    "Sound timer: " <> Integer.to_string(state.registers.sound_timer)
+    ("Sound timer: " <> Integer.to_string(state.registers.sound_timer))
     |> String.pad_trailing(18)
     |> String.to_charlist()
     |> draw_message(chip8_height + 3)
@@ -213,7 +217,7 @@ defmodule ExChip8.Screen do
     Integer.to_charlist(opcode, 16)
     |> draw_message(chip8_height + 5)
 
-    "Instruction: " <> state.instruction
+    ("Instruction: " <> state.instruction)
     |> String.pad_trailing(50)
     |> String.to_charlist()
     |> draw_message(chip8_height + 6)
@@ -234,7 +238,7 @@ defmodule ExChip8.Screen do
   end
 
   def apply_delay(%State{} = state) do
-    if (state.registers.delay_timer == 0) do
+    if state.registers.delay_timer == 0 do
       state
     else
       :timer.sleep(100)
@@ -242,17 +246,19 @@ defmodule ExChip8.Screen do
       updated_registers =
         state.registers
         |> Map.update!(:delay_timer, fn t -> t - 1 end)
+
       Map.put(state, :registers, updated_registers)
     end
   end
 
   def apply_sound(%State{} = state) do
-    if (state.registers.sound_timer == 0) do
+    if state.registers.sound_timer == 0 do
       state
     else
       updated_registers =
         state.registers
         |> Map.update!(:sound_timer, fn t -> t - 1 end)
+
       Map.put(state, :registers, updated_registers)
     end
   end
@@ -260,14 +266,13 @@ defmodule ExChip8.Screen do
   def receive_messages(keyboard, sleep_wait_period) do
     receive do
       {:event, %Event{ch: ?q}} ->
-
         :ok = Termbox.shutdown()
         Process.exit(self(), :normal)
 
       {:event, %Event{ch: pressed_key}} ->
-
         index = Keyboard.keyboard_map(keyboard, pressed_key)
-        if (index != false) do
+
+        if index != false do
           updated_keyboard =
             Keyboard.keyboard_down(keyboard, index)
             |> Map.put(:pressed_key, pressed_key)

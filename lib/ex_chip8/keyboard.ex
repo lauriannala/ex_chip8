@@ -20,8 +20,9 @@ defmodule ExChip8.Keyboard do
   end
 
   def keyboard_map(%Keyboard{} = keyboard, char) do
-    result = keyboard.keyboard_map
-      |> Enum.with_index
+    result =
+      keyboard.keyboard_map
+      |> Enum.with_index()
       |> Enum.find(false, fn {map_value, _} -> map_value == char end)
 
     case result do

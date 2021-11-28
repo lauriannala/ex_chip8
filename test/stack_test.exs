@@ -17,32 +17,32 @@ defmodule ExChip8.StackTest do
     setup [:initialize_array]
 
     test "stack_push/2 increments stack pointer", %{state: state} do
-      registers = Map.put(state.registers, :sp, 0xfe)
+      registers = Map.put(state.registers, :sp, 0xFE)
       state = Map.put(state, :registers, registers)
 
-      assert state.registers.sp == 0xfe
+      assert state.registers.sp == 0xFE
 
       state = Stack.stack_push(state, 0x10)
 
-      assert state.registers.sp == 0xff
+      assert state.registers.sp == 0xFF
     end
 
     test "stack_push/2 inserts value on top of stack", %{state: state} do
-      registers = Map.put(state.registers, :sp, 0xfe)
+      registers = Map.put(state.registers, :sp, 0xFE)
       state = Map.put(state, :registers, registers)
 
-      assert state.registers.sp == 0xfe
+      assert state.registers.sp == 0xFE
 
       state = Stack.stack_push(state, 0x10)
 
-      assert Enum.at(state.stack.stack, 0xfe) == 0x10
+      assert Enum.at(state.stack.stack, 0xFE) == 0x10
     end
 
     test "stack_push/2 raises when out of bounds", %{state: state} do
-      registers = Map.put(state.registers, :sp, 0xff)
+      registers = Map.put(state.registers, :sp, 0xFF)
       state = Map.put(state, :registers, registers)
 
-      assert state.registers.sp == 0xff
+      assert state.registers.sp == 0xFF
 
       assert_raise RuntimeError, fn ->
         Stack.stack_push(state, 0x10)
@@ -50,33 +50,33 @@ defmodule ExChip8.StackTest do
     end
 
     test "stack_pop/2 returns value from top of stack", %{state: state} do
-      registers = Map.put(state.registers, :sp, 0xfe)
+      registers = Map.put(state.registers, :sp, 0xFE)
       state = Map.put(state, :registers, registers)
-      updated_stack_list = List.replace_at(state.stack.stack, 0xfe - 1, 0x10)
+      updated_stack_list = List.replace_at(state.stack.stack, 0xFE - 1, 0x10)
 
       updated_stack = Map.put(state.stack, :stack, updated_stack_list)
       state = Map.put(state, :stack, updated_stack)
 
-      assert state.registers.sp == 0xfe
+      assert state.registers.sp == 0xFE
       assert Enum.at(state.stack.stack, state.registers.sp - 1) == 0x10
 
       assert {_state, 0x10} = Stack.stack_pop(state)
     end
 
     test "stack_pop/2 decrements stack pointer", %{state: state} do
-      registers = Map.put(state.registers, :sp, 0xfe)
+      registers = Map.put(state.registers, :sp, 0xFE)
       state = Map.put(state, :registers, registers)
-      updated_stack_list = List.replace_at(state.stack.stack, 0xfe, 0x10)
+      updated_stack_list = List.replace_at(state.stack.stack, 0xFE, 0x10)
 
       updated_stack = Map.put(state.stack, :stack, updated_stack_list)
       state = Map.put(state, :stack, updated_stack)
 
-      assert state.registers.sp == 0xfe
+      assert state.registers.sp == 0xFE
       assert Enum.at(state.stack.stack, state.registers.sp) == 0x10
 
       {state, _} = Stack.stack_pop(state)
 
-      assert state.registers.sp == 0xfd
+      assert state.registers.sp == 0xFD
     end
   end
 

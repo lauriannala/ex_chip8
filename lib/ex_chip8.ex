@@ -10,9 +10,22 @@ defmodule ExChip8 do
   @chip8_total_keys Application.get_env(:ex_chip8, :chip8_total_keys)
 
   @keyboard_map [
-    ?0, ?1, ?2, ?3, ?4, ?5,
-    ?6, ?7, ?8, ?9, ?a, ?b,
-    ?c, ?d, ?e, ?f
+    ?0,
+    ?1,
+    ?2,
+    ?3,
+    ?4,
+    ?5,
+    ?6,
+    ?7,
+    ?8,
+    ?9,
+    ?a,
+    ?b,
+    ?c,
+    ?d,
+    ?e,
+    ?f
   ]
 
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
@@ -34,8 +47,7 @@ defmodule ExChip8 do
     # Testing end
 
     Stream.cycle([0])
-    |> Enum.reduce(state, fn (_, updated_state) ->
-
+    |> Enum.reduce(state, fn _, updated_state ->
       opcode = ExChip8.Memory.memory_get_short(updated_state.memory, updated_state.registers.pc)
       # Testing start
       # opcode = 0xF165
@@ -45,17 +57,16 @@ defmodule ExChip8 do
         updated_state
         |> ExChip8.Instructions.exec(opcode)
 
-
       case next_cycle do
         :wait_for_key_press ->
           updated_state
           |> ExChip8.Screen.draw(opcode)
+
         _ ->
           next_cycle
           |> ExChip8.Screen.draw(opcode)
-          |> Map.update!(:registers, &(Map.update!(&1, :pc, fn counter -> counter + 2 end)))
+          |> Map.update!(:registers, &Map.update!(&1, :pc, fn counter -> counter + 2 end))
       end
-
     end)
   end
 
@@ -77,8 +88,12 @@ defmodule ExChip8 do
   end
 
   def init(%State{} = state, character_set) do
-    sliced = Enum.slice(
-      state.memory.memory, -(length(state.memory.memory) - length(character_set)), length(state.memory.memory))
+    sliced =
+      Enum.slice(
+        state.memory.memory,
+        -(length(state.memory.memory) - length(character_set)),
+        length(state.memory.memory)
+      )
 
     memory_with_character_set = character_set ++ sliced
 
@@ -94,8 +109,7 @@ defmodule ExChip8 do
     updated_memory =
       game_bytes
       |> Enum.with_index()
-      |> Enum.reduce(state.memory, fn ({byte, byte_index}, memory) ->
-
+      |> Enum.reduce(state.memory, fn {byte, byte_index}, memory ->
         index = byte_index + load_address
         ExChip8.Memory.memory_set(memory, index, byte)
       end)

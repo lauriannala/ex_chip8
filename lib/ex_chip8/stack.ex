@@ -13,7 +13,9 @@ defmodule ExChip8.Stack do
   end
 
   def stack_push(%State{} = state, value) do
-    if ((state.registers.sp + 1) >= length(state.stack.stack)), do: raise "Stack pointer out of bounds."
+    if state.registers.sp + 1 >= length(state.stack.stack),
+      do: raise("Stack pointer out of bounds.")
+
     updated_stack_list = List.replace_at(state.stack.stack, state.registers.sp, value)
 
     updated_stack = Map.put(state.stack, :stack, updated_stack_list)

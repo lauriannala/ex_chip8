@@ -79,7 +79,8 @@ defmodule ExChip8.KeyboardTest do
   end
 
   defp initialize_keyboard_with_map(_) do
-    state = %State{}
+    state =
+      %State{}
       |> Keyboard.init(16)
       |> Keyboard.keyboard_set_map([?0, ?1, ?2])
 
