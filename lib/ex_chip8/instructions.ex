@@ -433,7 +433,7 @@ defmodule ExChip8.Instructions do
          n: n
        })
        when (opcode &&& 0xF000) == 0xD000 do
-    sprite = state.registers.i
+    sprite = Enum.at(state.memory.memory, state.registers.i)
 
     %{collision: updated_vf, screen: updated_screen} =
       Screen.screen_draw_sprite(%{
@@ -447,7 +447,7 @@ defmodule ExChip8.Instructions do
 
     updated_v_register =
       state.registers.v
-      |> List.replace_at(0x0F, updated_vf)
+      |> List.replace_at(0x0F, boolean_to_integer(updated_vf))
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
@@ -684,4 +684,7 @@ defmodule ExChip8.Instructions do
   defp _exec(%State{} = state, opcode, _) do
     raise "UNKNOWN: #{Integer.to_charlist(opcode, 16)}, #{inspect(state)}"
   end
+
+  defp boolean_to_integer(true), do: 1
+  defp boolean_to_integer(false), do: 0
 end
