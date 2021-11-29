@@ -78,10 +78,10 @@ defmodule ExChip8.Instructions do
          kk: kk
        })
        when (opcode &&& 0xF000) == 0x3000 do
-    reg_val = Enum.at(state.registers.v, x)
+    vx = Enum.at(state.registers.v, x)
 
     updated_registers =
-      case reg_val == kk do
+      case vx == kk do
         true ->
           Map.update!(state.registers, :pc, fn counter -> counter + 2 end)
 

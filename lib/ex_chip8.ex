@@ -55,6 +55,10 @@ defmodule ExChip8 do
 
       next_cycle =
         updated_state
+        |> Map.update!(:registers, fn registers ->
+          registers
+          |> Map.update!(:pc, fn counter -> counter + 2 end)
+        end)
         |> ExChip8.Instructions.exec(opcode)
 
       case next_cycle do
@@ -65,7 +69,6 @@ defmodule ExChip8 do
         _ ->
           next_cycle
           |> ExChip8.Screen.draw(opcode)
-          |> Map.update!(:registers, &Map.update!(&1, :pc, fn counter -> counter + 2 end))
       end
     end)
   end
