@@ -438,8 +438,8 @@ defmodule ExChip8.Instructions do
     %{collision: updated_vf, screen: updated_screen} =
       Screen.screen_draw_sprite(%{
         screen: state.screen,
-        x: x,
-        y: y,
+        x: Enum.at(state.registers.v, x),
+        y: Enum.at(state.registers.v, y),
         memory: state.memory,
         sprite_index: sprite_index,
         num: n
