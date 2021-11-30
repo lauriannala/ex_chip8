@@ -68,7 +68,7 @@ defmodule ExChip8.ScreenTest do
           x: 32,
           y: 30,
           memory: state.memory,
-          sprite: 0x00,
+          sprite_index: 0x00,
           num: 1
         })
 
@@ -92,7 +92,7 @@ defmodule ExChip8.ScreenTest do
           x: 0,
           y: 0,
           memory: state.memory,
-          sprite: 0x00,
+          sprite_index: 0x00,
           num: 1
         })
 
@@ -114,7 +114,7 @@ defmodule ExChip8.ScreenTest do
           x: 32,
           y: 30,
           memory: state.memory,
-          sprite: 0x00,
+          sprite_index: 0x00,
           num: 1
         })
 
@@ -140,7 +140,7 @@ defmodule ExChip8.ScreenTest do
           x: 0,
           y: 0,
           memory: state.memory,
-          sprite: 0x00,
+          sprite_index: 0x00,
           num: 1
         })
 

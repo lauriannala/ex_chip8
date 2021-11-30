@@ -11,5 +11,5 @@ Experimental project: chip8 emulator written with Elixir.
 
 ```bash
 mix deps.get
-mix ex_chip8 <your totally awesome rom file>
+mix ex_chip8 <your totally awesome ROM-file>
 ```
