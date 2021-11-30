@@ -163,7 +163,13 @@ defmodule ExChip8.Instructions do
          kk: kk
        })
        when (opcode &&& 0xF000) == 0x7000 do
-    updated_v_register = List.update_at(state.registers.v, x, fn v -> v + kk end)
+    updated_v_register =
+      List.update_at(state.registers.v, x, fn v ->
+        sum = v + kk
+        <<to_8_bit_int, 8>> = <<sum, 8>>
+        to_8_bit_int
+      end)
+
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
     {
