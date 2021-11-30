@@ -433,7 +433,7 @@ defmodule ExChip8.Instructions do
          n: n
        })
        when (opcode &&& 0xF000) == 0xD000 do
-    sprite = Enum.at(state.memory.memory, state.registers.i)
+    sprite_index = state.registers.i
 
     %{collision: updated_vf, screen: updated_screen} =
       Screen.screen_draw_sprite(%{
@@ -441,7 +441,7 @@ defmodule ExChip8.Instructions do
         x: x,
         y: y,
         memory: state.memory,
-        sprite: sprite,
+        sprite_index: sprite_index,
         num: n
       })
 

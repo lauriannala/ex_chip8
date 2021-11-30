@@ -129,12 +129,12 @@ defmodule ExChip8.Screen do
         x: x,
         y: y,
         memory: %Memory{} = memory,
-        sprite: sprite,
+        sprite_index: sprite_index,
         num: num
       }) do
     sprite_bytes =
       memory.memory
-      |> Enum.drop(sprite)
+      |> Enum.drop(sprite_index)
       |> Enum.take(num)
 
     changeset =
