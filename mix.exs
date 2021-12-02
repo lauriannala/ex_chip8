@@ -14,12 +14,16 @@ defmodule ExChip8.MixProject do
 
   def application do
     [
+      mod: {ExChip8.Application, []},
       extra_applications: [:logger]
     ]
   end
 
   defp deps do
-    []
+    [
+      {:scenic, "~> 0.10"},
+      {:scenic_driver_glfw, "~> 0.10", targets: :host}
+    ]
   end
 
   defp aliases do

@@ -1,7 +1,9 @@
 use Mix.Config
 
-config :ex_chip8, :chip8_width, 64
-config :ex_chip8, :chip8_height, 32
+width = 64
+height = 32
+config :ex_chip8, :chip8_width, width
+config :ex_chip8, :chip8_height, height
 config :ex_chip8, :sleep_wait_period, 2
 # config :ex_chip8, :sleep_wait_period, 1000
 config :ex_chip8, :chip8_memory_size, 4096
@@ -11,6 +13,19 @@ config :ex_chip8, :chip8_total_keys, 16
 config :ex_chip8, :chip8_program_load_address, 0x200
 config :ex_chip8, :chip8_program_load_address, 0x200
 config :ex_chip8, :chip8_default_sprite_height, 5
+
+config :ex_chip8, :viewport, %{
+  name: :main_viewport,
+  size: {width * 10, height * 10},
+  default_scene: {ExChip8.Scenes.Home, nil},
+  drivers: [
+    %{
+      module: Scenic.Driver.Glfw,
+      name: :glfw,
+      opts: [resizeable: false, title: "ex_chip8"]
+    }
+  ]
+}
 
 config :ex_chip8, :chip8_default_character_set, [
   0xF0,
