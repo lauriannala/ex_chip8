@@ -38,8 +38,6 @@ defmodule ExChip8 do
       |> init(@default_character_set)
       |> read_file_to_memory(@chip8_program_load_address)
 
-    ExChip8.Screen.init_screen()
-
     # Testing start
     # state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 0, 0))
     # state = Map.put(state, :screen, ExChip8.Screen.screen_set(state.screen, 1, 0))

@@ -9,17 +9,10 @@ defmodule ExChip8.Screen do
   alias ExChip8.State
   alias ExChip8.Keyboard
   alias ExChip8.Memory
-  alias ExTermbox.Bindings, as: Termbox
-  alias ExTermbox.{Cell, EventManager, Event, Position}
 
   import Bitwise
 
-  def init_screen() do
-    Termbox.init()
-
-    {:ok, _pid} = EventManager.start_link()
-    :ok = EventManager.subscribe(self())
-  end
+  require Logger
 
   def init_state(
         %State{} = state,
@@ -190,51 +183,26 @@ defmodule ExChip8.Screen do
       |> Enum.join(" ")
       |> String.to_charlist()
       |> Enum.with_index()
-      |> Enum.map(fn {ch, x} ->
-        :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: y}, ch: ch})
+      |> Enum.map(fn {char, x} ->
+        # TODO: render char to x, y coordinates.
+        Logger.info("Render: #{char}, x: #{x}, y: #{y}")
       end)
     end)
 
-    Termbox.present()
+    _ = receive_messages(keyboard)
 
-    mailbox = receive_messages(keyboard, sleep_wait_period)
+    Logger.info("Delay timer: #{state.registers.delay_timer}")
 
-    draw_message('(Press <q> to quit)', chip8_height)
-    draw_message(state.message_box, chip8_height + 1)
+    Logger.info("Sound timer: #{state.registers.sound_timer}")
 
-    ("Delay timer: " <> Integer.to_string(state.registers.delay_timer))
-    |> String.pad_trailing(18)
-    |> String.to_charlist()
-    |> draw_message(chip8_height + 2)
-
-    ("Sound timer: " <> Integer.to_string(state.registers.sound_timer))
-    |> String.pad_trailing(18)
-    |> String.to_charlist()
-    |> draw_message(chip8_height + 3)
-
-    draw_message(state.filename, chip8_height + 4)
-
-    Integer.to_charlist(opcode, 16)
-    |> draw_message(chip8_height + 5)
-
-    ("Instruction: " <> state.instruction)
-    |> String.pad_trailing(50)
-    |> String.to_charlist()
-    |> draw_message(chip8_height + 6)
+    Logger.info(state.filename)
+    Logger.info("#{opcode}")
+    Logger.info("Instruction: #{state.instruction}")
 
     state =
       state
       |> apply_delay()
       |> apply_sound()
-
-    mailbox_update(state, mailbox)
-  end
-
-  def draw_message(message, offset) do
-    Enum.with_index(message)
-    |> Enum.map(fn {ch, x} ->
-      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: offset}, ch: ch})
-    end)
   end
 
   def apply_delay(%State{} = state) do
@@ -263,13 +231,13 @@ defmodule ExChip8.Screen do
     end
   end
 
-  def receive_messages(keyboard, sleep_wait_period) do
-    receive do
-      {:event, %Event{ch: ?q}} ->
-        :ok = Termbox.shutdown()
+  def receive_messages(keyboard) do
+    case keyboard do
+      {:event, :quit} ->
+        # TODO: close game
         Process.exit(self(), :normal)
 
-      {:event, %Event{ch: pressed_key}} ->
+      {:event, pressed_key} ->
         index = Keyboard.keyboard_map(keyboard, pressed_key)
 
         if index != false do
@@ -281,18 +249,9 @@ defmodule ExChip8.Screen do
         else
           :unknown_key
         end
-    after
-      sleep_wait_period ->
+
+      _ ->
         :ok
     end
-  end
-
-  def mailbox_update(state, {:update_keyboard, keyboard}) do
-    Map.put(state, :keyboard, keyboard)
-    |> Map.put(:message_box, 'Key pressed: ' ++ [keyboard.pressed_key])
-  end
-
-  def mailbox_update(state, _) do
-    Map.put(state, :message_box, '              ')
   end
 end
