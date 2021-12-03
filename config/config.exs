@@ -17,7 +17,7 @@ config :ex_chip8, :chip8_default_sprite_height, 5
 config :ex_chip8, :viewport, %{
   name: :main_viewport,
   size: {width * 10, height * 10},
-  default_scene: {ExChip8.Scenes.Home, nil},
+  default_scene: {ExChip8.Scenes.Game, 0x0000},
   drivers: [
     %{
       module: Scenic.Driver.Glfw,
