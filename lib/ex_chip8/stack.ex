@@ -1,34 +1,31 @@
 defmodule ExChip8.Stack do
-  alias ExChip8.State
   alias ExChip8.Stack
 
   defstruct stack: []
 
-  def init(%State{} = state, size) do
+  def init({screen, memory, registers, _, keyboard}, size) do
     stack = %Stack{
       stack: 0..(size - 1) |> Enum.map(fn _ -> 0x00 end)
     }
 
-    Map.put(state, :stack, stack)
+    {screen, memory, registers, stack, keyboard}
   end
 
-  def stack_push(%State{} = state, value) do
-    if state.registers.sp + 1 >= length(state.stack.stack),
+  def stack_push({stack, registers}, value) do
+    if registers.sp + 1 >= length(stack.stack),
       do: raise("Stack pointer out of bounds.")
 
-    updated_stack_list = List.replace_at(state.stack.stack, state.registers.sp, value)
+    updated_stack_list = List.replace_at(stack.stack, registers.sp, value)
 
-    updated_stack = Map.put(state.stack, :stack, updated_stack_list)
-    state = Map.put(state, :stack, updated_stack)
+    updated_stack = Map.put(stack, :stack, updated_stack_list)
 
-    registers = Map.update!(state.registers, :sp, fn stack_pointer -> stack_pointer + 1 end)
-    Map.put(state, :registers, registers)
+    registers = Map.update!(registers, :sp, fn stack_pointer -> stack_pointer + 1 end)
+    {updated_stack, registers}
   end
 
-  def stack_pop(%State{} = state) do
-    registers = Map.update!(state.registers, :sp, fn stack_pointer -> stack_pointer - 1 end)
-    state = Map.put(state, :registers, registers)
+  def stack_pop({stack, registers}) do
+    registers = Map.update!(registers, :sp, fn stack_pointer -> stack_pointer - 1 end)
 
-    {state, Enum.at(state.stack.stack, state.registers.sp)}
+    {registers, Enum.at(stack.stack, registers.sp)}
   end
 end

@@ -1,16 +1,15 @@
 defmodule ExChip8.Memory do
   alias ExChip8.Memory
-  alias ExChip8.State
   import Bitwise
 
   defstruct memory: []
 
-  def init(%State{} = state, size) do
+  def init({sreen, _, registers, stack, keyboard}, size) do
     memory = %Memory{
       memory: 0..(size - 1) |> Enum.map(fn _ -> 0x00 end)
     }
 
-    Map.put(state, :memory, memory)
+    {sreen, memory, registers, stack, keyboard}
   end
 
   def memory_set(%Memory{} = memory, index, value) do

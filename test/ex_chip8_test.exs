@@ -1,7 +1,8 @@
 defmodule ExChip8Test do
   use ExUnit.Case
 
-  alias ExChip8.State
+  alias ExChip8
+  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
 
   describe "ExChip8 uninitialized" do
     test "create_state/0 creates state" do
@@ -11,21 +12,23 @@ defmodule ExChip8Test do
       chip8_memory_size = Application.get_env(:ex_chip8, :chip8_memory_size)
       chip8_total_data_registers = Application.get_env(:ex_chip8, :chip8_total_data_registers)
 
-      state = ExChip8.create_state(%State{})
-      assert state.screen.sleep_wait_period == sleep_wait_period
-      assert state.screen.chip8_height == chip8_height
-      assert state.screen.chip8_width == chip8_width
+      {:ok, {screen, memory, registers, _, _}, _} =
+        ExChip8.create_state({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}})
 
-      assert length(state.memory.memory) == chip8_memory_size
+      assert screen.sleep_wait_period == sleep_wait_period
+      assert screen.chip8_height == chip8_height
+      assert screen.chip8_width == chip8_width
 
-      assert length(state.registers.v) == chip8_total_data_registers
+      assert length(memory.memory) == chip8_memory_size
+
+      assert length(registers.v) == chip8_total_data_registers
     end
   end
 
   describe "ExChip8 with state" do
     setup [:with_state]
 
-    test "init/1 sets character_set to memory", %{state: state} do
+    test "init/1 sets character_set to memory", %{state: {:ok, {_, memory, _, _, _}, _} = state} do
       character_set = [
         0xF0,
         0x90,
@@ -33,21 +36,22 @@ defmodule ExChip8Test do
         0x90
       ]
 
-      original_length = length(state.memory.memory)
-      state = ExChip8.init(state, character_set)
+      original_length = length(memory.memory)
 
-      assert Enum.slice(state.memory.memory, 0..3) ==
+      {:ok, {_, memory, _, _, _}, _} = ExChip8.init(state, character_set)
+
+      assert Enum.slice(memory.memory, 0..3) ==
                character_set
 
-      assert Enum.slice(state.memory.memory, 4, length(state.memory.memory))
+      assert Enum.slice(memory.memory, 4, length(memory.memory))
              |> Enum.all?(fn x -> x == 0x00 end)
 
-      assert original_length == length(state.memory.memory)
+      assert original_length == length(memory.memory)
     end
   end
 
   defp with_state(_) do
-    state = ExChip8.create_state(%State{})
+    state = ExChip8.create_state({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}})
     %{state: state}
   end
 end

@@ -12,17 +12,17 @@ defmodule ExChip8.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {ExChip8.Application, []},
       extra_applications: [:logger]
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_termbox, "~> 0.3"}
+      {:scenic, "~> 0.10"},
+      {:scenic_driver_glfw, "~> 0.10", targets: :host}
     ]
   end
 

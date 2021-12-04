@@ -6,23 +6,14 @@ defmodule ExChip8.Screen do
             chip8_width: 0,
             pixels: []
 
-  alias ExChip8.State
-  alias ExChip8.Keyboard
   alias ExChip8.Memory
-  alias ExTermbox.Bindings, as: Termbox
-  alias ExTermbox.{Cell, EventManager, Event, Position}
 
   import Bitwise
 
-  def init_screen() do
-    Termbox.init()
-
-    {:ok, _pid} = EventManager.start_link()
-    :ok = EventManager.subscribe(self())
-  end
+  require Logger
 
   def init_state(
-        %State{} = state,
+        {_, memory, registers, stack, keyboard},
         sleep_wait_period: sleep_wait_period,
         chip8_height: chip8_height,
         chip8_width: chip8_width
@@ -38,14 +29,7 @@ defmodule ExChip8.Screen do
         end)
     }
 
-    Map.put(state, :screen, screen)
-  end
-
-  def char(%Screen{} = screen, x, y) do
-    case screen_is_set?(screen, x, y) do
-      true -> "■"
-      false -> " "
-    end
+    {screen, memory, registers, stack, keyboard}
   end
 
   def screen_set(%Screen{} = screen, x, y) do
@@ -171,128 +155,27 @@ defmodule ExChip8.Screen do
     |> Enum.filter(fn {status, _} -> status == :update end)
   end
 
-  def draw(
-        %State{
-          screen:
-            %Screen{
-              sleep_wait_period: sleep_wait_period,
-              chip8_height: chip8_height,
-              chip8_width: chip8_width
-            } = screen,
-          keyboard: %Keyboard{} = keyboard
-        } = state,
-        opcode
-      ) do
-    0..(chip8_height - 1)
-    |> Enum.map(fn y ->
-      0..(chip8_width - 1)
-      |> Enum.map(fn x -> char(screen, x, y) end)
-      |> Enum.join(" ")
-      |> String.to_charlist()
-      |> Enum.with_index()
-      |> Enum.map(fn {ch, x} ->
-        :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: y}, ch: ch})
-      end)
-    end)
-
-    Termbox.present()
-
-    mailbox = receive_messages(keyboard, sleep_wait_period)
-
-    draw_message('(Press <q> to quit)', chip8_height)
-    draw_message(state.message_box, chip8_height + 1)
-
-    ("Delay timer: " <> Integer.to_string(state.registers.delay_timer))
-    |> String.pad_trailing(18)
-    |> String.to_charlist()
-    |> draw_message(chip8_height + 2)
-
-    ("Sound timer: " <> Integer.to_string(state.registers.sound_timer))
-    |> String.pad_trailing(18)
-    |> String.to_charlist()
-    |> draw_message(chip8_height + 3)
-
-    draw_message(state.filename, chip8_height + 4)
-
-    Integer.to_charlist(opcode, 16)
-    |> draw_message(chip8_height + 5)
-
-    ("Instruction: " <> state.instruction)
-    |> String.pad_trailing(50)
-    |> String.to_charlist()
-    |> draw_message(chip8_height + 6)
-
-    state =
-      state
-      |> apply_delay()
-      |> apply_sound()
-
-    mailbox_update(state, mailbox)
-  end
-
-  def draw_message(message, offset) do
-    Enum.with_index(message)
-    |> Enum.map(fn {ch, x} ->
-      :ok = Termbox.put_cell(%Cell{position: %Position{x: x, y: offset}, ch: ch})
-    end)
-  end
-
-  def apply_delay(%State{} = state) do
-    if state.registers.delay_timer == 0 do
+  def apply_delay({screen, memory, registers, stack, keyboard} = state) do
+    if registers.delay_timer == 0 do
       state
     else
-      :timer.sleep(100)
-
       updated_registers =
-        state.registers
+        registers
         |> Map.update!(:delay_timer, fn t -> t - 1 end)
 
-      Map.put(state, :registers, updated_registers)
+      {screen, memory, updated_registers, stack, keyboard}
     end
   end
 
-  def apply_sound(%State{} = state) do
-    if state.registers.sound_timer == 0 do
+  def apply_sound({screen, memory, registers, stack, keyboard} = state) do
+    if registers.sound_timer == 0 do
       state
     else
       updated_registers =
-        state.registers
+        registers
         |> Map.update!(:sound_timer, fn t -> t - 1 end)
 
-      Map.put(state, :registers, updated_registers)
+      {screen, memory, updated_registers, stack, keyboard}
     end
-  end
-
-  def receive_messages(keyboard, sleep_wait_period) do
-    receive do
-      {:event, %Event{ch: ?q}} ->
-        :ok = Termbox.shutdown()
-        Process.exit(self(), :normal)
-
-      {:event, %Event{ch: pressed_key}} ->
-        index = Keyboard.keyboard_map(keyboard, pressed_key)
-
-        if index != false do
-          updated_keyboard =
-            Keyboard.keyboard_down(keyboard, index)
-            |> Map.put(:pressed_key, pressed_key)
-
-          {:update_keyboard, updated_keyboard}
-        else
-          :unknown_key
-        end
-    after
-      sleep_wait_period ->
-        :ok
-    end
-  end
-
-  def mailbox_update(state, {:update_keyboard, keyboard}) do
-    Map.put(state, :keyboard, keyboard)
-    |> Map.put(:message_box, 'Key pressed: ' ++ [keyboard.pressed_key])
-  end
-
-  def mailbox_update(state, _) do
-    Map.put(state, :message_box, '              ')
   end
 end

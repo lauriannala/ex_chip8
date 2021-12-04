@@ -1,22 +1,21 @@
 defmodule ExChip8.Keyboard do
   alias ExChip8.Keyboard
-  alias ExChip8.State
 
   defstruct keyboard: [],
             keyboard_map: [],
             pressed_key: false
 
-  def init(%State{} = state, k_size) do
+  def init({screen, memory, registers, stack, _}, k_size) do
     keyboard = %Keyboard{
       keyboard: 0..(k_size - 1) |> Enum.map(fn _ -> false end)
     }
 
-    Map.put(state, :keyboard, keyboard)
+    {screen, memory, registers, stack, keyboard}
   end
 
-  def keyboard_set_map(%State{} = state, map) do
-    updated_keyboard = Map.put(state.keyboard, :keyboard_map, map)
-    Map.put(state, :keyboard, updated_keyboard)
+  def keyboard_set_map({screen, memory, registers, stack, keyboard}, map) do
+    updated_keyboard = Map.put(keyboard, :keyboard_map, map)
+    {screen, memory, registers, stack, updated_keyboard}
   end
 
   def keyboard_map(%Keyboard{} = keyboard, char) do
