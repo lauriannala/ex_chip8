@@ -85,20 +85,23 @@ defmodule ExChip8.Scenes.Game do
 
   defp draw_chip8(
          graph,
-         {%Screen{chip8_height: chip8_height, chip8_width: chip8_width} = screen, memory,
-          registers, stack, keyboard}
+         {%Screen{chip8_height: chip8_height, chip8_width: chip8_width} = screen, _memory,
+          _registers, _stack, _keyboard}
        ) do
-    graph =
-      Enum.reduce(0..(chip8_height - 1), graph, fn y, tranform_y ->
-        Enum.reduce(0..(chip8_width - 1), tranform_y, fn x, tranform_x ->
-          case screen_is_set?(screen, x, y) do
-            true -> draw_tile(tranform_x, x, y)
-            false -> draw_tile(tranform_x, x, y, fill: :black)
-          end
+    changes =
+      0..(chip8_height - 1)
+      |> Enum.map(fn y ->
+        0..(chip8_width - 1)
+        |> Enum.map(fn x ->
+          {x, y, screen_is_set?(screen, x, y)}
         end)
       end)
+      |> List.flatten()
+      |> Enum.filter(fn {_, _, is_set} -> is_set == true end)
 
-    graph
+    Enum.reduce(changes, graph, fn {x, y, _}, acc ->
+      draw_tile(acc, x, y)
+    end)
   end
 
   defp draw_tile(graph, x, y, opts \\ []) do
