@@ -1,7 +1,7 @@
 defmodule ExChip8.Scenes.Game do
   use Scenic.Scene
   alias Scenic.Graph
-  alias ExChip8.{State, Screen, Keyboard}
+  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
   import Scenic.Primitives, only: [rectangle: 3, text: 3]
   import ExChip8.Screen
 
@@ -19,7 +19,7 @@ defmodule ExChip8.Scenes.Game do
     viewport = opts[:viewport]
 
     chip8 =
-      %State{}
+      {%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}
       # TODO: as parameter
       |> ExChip8.create_state("TETRIS")
       |> ExChip8.init(@default_character_set)
@@ -45,15 +45,19 @@ defmodule ExChip8.Scenes.Game do
     {:ok, state, push: graph}
   end
 
-  def handle_info(:frame, %{frame_count: frame_count, chip8: %State{} = chip8} = state) do
-    opcode = ExChip8.Memory.memory_get_short(chip8.memory, chip8.registers.pc)
+  def handle_info(
+        :frame,
+        %{frame_count: frame_count, chip8: {screen, memory, registers, stack, keyboard} = chip8} =
+          state
+      ) do
+    opcode = ExChip8.Memory.memory_get_short(memory, registers.pc)
+
+    updated_registers =
+      registers
+      |> Map.update!(:pc, fn counter -> counter + 2 end)
 
     next_cycle =
-      chip8
-      |> Map.update!(:registers, fn registers ->
-        registers
-        |> Map.update!(:pc, fn counter -> counter + 2 end)
-      end)
+      {screen, memory, updated_registers, stack, keyboard}
       |> ExChip8.Instructions.exec(opcode)
 
     updated_chip8 =
@@ -65,9 +69,15 @@ defmodule ExChip8.Scenes.Game do
           next_cycle
       end
 
-    {graph, updated_chip8} = draw_chip8(state.graph, updated_chip8)
+    graph =
+      state.graph
+      |> draw_chip8(updated_chip8)
+      |> draw_opcode(opcode)
 
-    graph = draw_opcode(graph, state.opcode)
+    updated_chip8 =
+      updated_chip8
+      |> apply_delay()
+      |> apply_sound()
 
     {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode, chip8: updated_chip8},
      push: graph}
@@ -75,15 +85,8 @@ defmodule ExChip8.Scenes.Game do
 
   defp draw_chip8(
          graph,
-         %State{
-           screen:
-             %Screen{
-               sleep_wait_period: sleep_wait_period,
-               chip8_height: chip8_height,
-               chip8_width: chip8_width
-             } = screen,
-           keyboard: %Keyboard{} = keyboard
-         } = state
+         {%Screen{chip8_height: chip8_height, chip8_width: chip8_width} = screen, memory,
+          registers, stack, keyboard}
        ) do
     graph =
       Enum.reduce(0..(chip8_height - 1), graph, fn y, tranform_y ->
@@ -95,12 +98,7 @@ defmodule ExChip8.Scenes.Game do
         end)
       end)
 
-    state =
-      state
-      |> apply_delay()
-      |> apply_sound()
-
-    {graph, state}
+    graph
   end
 
   defp draw_tile(graph, x, y, opts \\ []) do

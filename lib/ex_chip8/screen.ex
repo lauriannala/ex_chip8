@@ -6,8 +6,6 @@ defmodule ExChip8.Screen do
             chip8_width: 0,
             pixels: []
 
-  alias ExChip8.State
-  alias ExChip8.Keyboard
   alias ExChip8.Memory
 
   import Bitwise
@@ -15,7 +13,7 @@ defmodule ExChip8.Screen do
   require Logger
 
   def init_state(
-        %State{} = state,
+        {_, memory, registers, stack, keyboard},
         sleep_wait_period: sleep_wait_period,
         chip8_height: chip8_height,
         chip8_width: chip8_width
@@ -31,7 +29,7 @@ defmodule ExChip8.Screen do
         end)
     }
 
-    Map.put(state, :screen, screen)
+    {screen, memory, registers, stack, keyboard}
   end
 
   def char(%Screen{} = screen, x, y) do
@@ -164,96 +162,29 @@ defmodule ExChip8.Screen do
     |> Enum.filter(fn {status, _} -> status == :update end)
   end
 
-  def draw(
-        %State{
-          screen:
-            %Screen{
-              sleep_wait_period: sleep_wait_period,
-              chip8_height: chip8_height,
-              chip8_width: chip8_width
-            } = screen,
-          keyboard: %Keyboard{} = keyboard
-        } = state,
-        opcode
-      ) do
-    0..(chip8_height - 1)
-    |> Enum.map(fn y ->
-      0..(chip8_width - 1)
-      |> Enum.map(fn x -> char(screen, x, y) end)
-      |> Enum.join(" ")
-      |> String.to_charlist()
-      |> Enum.with_index()
-      |> Enum.map(fn {char, x} ->
-        # TODO: render char to x, y coordinates.
-        Logger.info("Render: #{char}, x: #{x}, y: #{y}")
-      end)
-    end)
-
-    _ = receive_messages(keyboard)
-
-    Logger.info("Delay timer: #{state.registers.delay_timer}")
-
-    Logger.info("Sound timer: #{state.registers.sound_timer}")
-
-    Logger.info(state.filename)
-    Logger.info("#{opcode}")
-    Logger.info("Instruction: #{state.instruction}")
-
-    state =
-      state
-      |> apply_delay()
-      |> apply_sound()
-
-    state
-  end
-
-  def apply_delay(%State{} = state) do
-    if state.registers.delay_timer == 0 do
+  def apply_delay({screen, memory, registers, stack, keyboard} = state) do
+    if registers.delay_timer == 0 do
       state
     else
       # :timer.sleep(10)
 
       updated_registers =
-        state.registers
+        registers
         |> Map.replace!(:delay_timer, 0)
 
-      Map.put(state, :registers, updated_registers)
+      {screen, memory, updated_registers, stack, keyboard}
     end
   end
 
-  def apply_sound(%State{} = state) do
-    if state.registers.sound_timer == 0 do
+  def apply_sound({screen, memory, registers, stack, keyboard} = state) do
+    if registers.sound_timer == 0 do
       state
     else
       updated_registers =
-        state.registers
+        registers
         |> Map.replace!(:sound_timer, 0)
 
-      Map.put(state, :registers, updated_registers)
-    end
-  end
-
-  def receive_messages(keyboard) do
-    case keyboard do
-      {:event, :quit} ->
-        # TODO: close game
-        Process.exit(self(), :normal)
-
-      {:event, pressed_key} ->
-        index = Keyboard.keyboard_map(keyboard, pressed_key)
-
-        if index != false do
-          updated_keyboard =
-            Keyboard.keyboard_down(keyboard, index)
-            |> Map.put(:pressed_key, pressed_key)
-
-          {:update_keyboard, updated_keyboard}
-        else
-          :unknown_key
-        end
-
-      _ ->
-        :ok
+      {screen, memory, updated_registers, stack, keyboard}
     end
   end
 end

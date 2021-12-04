@@ -2,13 +2,16 @@ defmodule ExChip8.MemoryTest do
   use ExUnit.Case
 
   alias ExChip8.Memory
-  alias ExChip8.State
+  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
 
   describe "Empty memory" do
     test "init/2 initializes memory list" do
       size = 200
-      state = Memory.init(%State{}, size)
-      assert length(state.memory.memory) == size
+
+      {_, memory, _, _, _} =
+        Memory.init({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}, size)
+
+      assert length(memory.memory) == size
     end
   end
 
@@ -49,7 +52,10 @@ defmodule ExChip8.MemoryTest do
 
   defp initialize_array(_) do
     size = 200
-    state = Memory.init(%State{}, size)
-    %{memory: state.memory}
+
+    {_, memory, _, _, _} =
+      Memory.init({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}, size)
+
+    %{memory: memory}
   end
 end
