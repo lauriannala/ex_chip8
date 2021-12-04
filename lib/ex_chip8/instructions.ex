@@ -24,12 +24,11 @@ defmodule ExChip8.Instructions do
       })
 
     case exec_result do
-      {instruction, updated_state} ->
-        updated_state
-        |> Map.replace!(:instruction, instruction)
-
       :wait_for_key_press ->
         :wait_for_key_press
+
+      updated_state ->
+        updated_state
     end
   end
 
@@ -37,7 +36,7 @@ defmodule ExChip8.Instructions do
   defp _exec(%State{} = state, 0x00E0, _) do
     updated_screen = Screen.screen_clear(state.screen)
 
-    {"CLS", Map.replace!(state, :screen, updated_screen)}
+    Map.replace!(state, :screen, updated_screen)
   end
 
   # RET - Return from subroutine.
@@ -46,7 +45,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(updated_state.registers, :pc, pc)
 
-    {"RET", Map.replace!(updated_state, :registers, updated_registers)}
+    Map.replace!(updated_state, :registers, updated_registers)
   end
 
   # JP addr - 1nnn, Jump to location nnn.
@@ -56,8 +55,7 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF000) == 0x1000 do
     updated_registers = Map.replace!(state.registers, :pc, nnn)
 
-    {"JP addr - nnn: #{Integer.to_charlist(nnn, 16)}",
-     Map.replace!(state, :registers, updated_registers)}
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # CALL addr - 2nnn, Call subroutine at location nnn.
@@ -68,8 +66,7 @@ defmodule ExChip8.Instructions do
     updated_state = Stack.stack_push(state, state.registers.pc)
     updated_registers = Map.replace!(updated_state.registers, :pc, nnn)
 
-    {"CALL addr - nnn: #{Integer.to_charlist(nnn, 16)}",
-     Map.replace!(updated_state, :registers, updated_registers)}
+    Map.replace!(updated_state, :registers, updated_registers)
   end
 
   # SE Vx, byte - 3xkk, Skip next instruction if Vx=kk.
@@ -89,10 +86,7 @@ defmodule ExChip8.Instructions do
           state.registers
       end
 
-    {
-      "SE Vx (3xkk) - byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SE Vx, byte - 4xkk, Skip next instruction if Vx!=kk.
@@ -112,10 +106,7 @@ defmodule ExChip8.Instructions do
           state.registers
       end
 
-    {
-      "SE Vx (4xkk) - byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SE Vx, Vy - 5xy0, Skip next instruction if Vx == Vy.
@@ -136,10 +127,7 @@ defmodule ExChip8.Instructions do
           state.registers
       end
 
-    {
-      "SE Vx, Vy (5xy0) - byte, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD Vx, byte - 6xkk, Vx = kk.
@@ -151,10 +139,7 @@ defmodule ExChip8.Instructions do
     updated_v_register = List.replace_at(state.registers.v, x, kk)
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "LD Vx, byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # ADD Vx, byte - 7xkk, Set Vx = Vx + kk.
@@ -172,10 +157,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "ADD Vx, byte, x: #{Integer.to_charlist(x, 16)}, kk: #{Integer.to_charlist(kk, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD Vx, Vy - 8xy0, Vx = Vy.
@@ -189,10 +171,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "LD Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # OR Vx, Vy - 8xy1, Performs an bitwise OR on Vx and Vy and stores the result in Vx.
@@ -208,10 +187,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "OR Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   #  AND Vx, Vy - 8xy2, Performs an bitwise AND on Vx and Vy and stores the result in Vx.
@@ -227,10 +203,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "AND Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # XOR Vx, Vy - 8xy3, Performs an bitwise XOR on Vx and Vy and stores the result in Vx.
@@ -246,10 +219,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "XOR Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # ADD Vx, Vy - 8xy4, Set Vx = Vx + Vy, set VF = carry.
@@ -271,10 +241,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "ADD Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SUB Vx, Vy - 8xy5, Set Vx = Vx - Vy, set VF = Not borrow.
@@ -297,10 +264,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "SUB Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SHR Vx {, Vy} - 8xy6.
@@ -322,10 +286,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "SHR Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SUBN Vx, Vy - 8xy7.
@@ -347,10 +308,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "SUBN Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SHL Vx {, Vy} - 8xyE.
@@ -371,10 +329,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "SHL Vx, Vy, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SNE Vx, Vy - 9xy0, Skip next instruction if Vx != Vy.
@@ -395,10 +350,7 @@ defmodule ExChip8.Instructions do
           state.registers
       end
 
-    {
-      "SNE Vx, Vy (9xy0) - byte, x: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD I, addr - Annn, Sets the I register to nnn.
@@ -408,8 +360,7 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF000) == 0xA000 do
     updated_registers = Map.replace!(state.registers, :i, nnn)
 
-    {"LD I, addr - Annn: #{Integer.to_charlist(nnn, 16)}",
-     Map.replace!(state, :registers, updated_registers)}
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # RND Vx, byte - Cxkk
@@ -426,10 +377,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "RND Vx, byte x: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # DRW Vx, Vy, nibble - Dxyn, Draws sprite to the screen.
@@ -457,15 +405,9 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    updated_state =
-      state
-      |> Map.replace!(:registers, updated_registers)
-      |> Map.replace!(:screen, updated_screen)
-
-    {
-      "DRW Vx, Vy, nibble: #{Integer.to_charlist(x, 16)}, y: #{Integer.to_charlist(y, 16)}",
-      updated_state
-    }
+    state
+    |> Map.replace!(:registers, updated_registers)
+    |> Map.replace!(:screen, updated_screen)
   end
 
   # SKP Vx - Ex9E, Skip the next instruction if the key with the value of Vx is pressed.
@@ -484,10 +426,7 @@ defmodule ExChip8.Instructions do
           state.registers
       end
 
-    {
-      "SKP Vx - Ex9E: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # SKP Vx - ExA1, Skip the next instruction if the key with the value of Vx is NOT pressed.
@@ -506,10 +445,7 @@ defmodule ExChip8.Instructions do
           state.registers
       end
 
-    {
-      "SKP Vx - ExA1: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD Vx, DT - Fx07, Set Vx to the delay timer value.
@@ -525,10 +461,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-    {
-      "LD Vx, DT - Fx07: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD Vx, K - fx0A.
@@ -550,10 +483,7 @@ defmodule ExChip8.Instructions do
 
         updated_registers = Map.replace!(state.registers, :v, updated_v_register)
 
-        {
-          "LD Vx, K - Fx0A: #{Integer.to_charlist(x, 16)}, pressed_key: #{pressed_key_index}",
-          Map.replace!(state, :registers, updated_registers)
-        }
+        Map.replace!(state, :registers, updated_registers)
     end
   end
 
@@ -566,10 +496,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :delay_timer, vx)
 
-    {
-      "LD CT, Vx, K - Fx15: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD ST, Vx, K - Fx18, Set sound_timer to Vx.
@@ -581,10 +508,7 @@ defmodule ExChip8.Instructions do
 
     updated_registers = Map.replace!(state.registers, :sound_timer, vx)
 
-    {
-      "LD ST, Vx, K - Fx15: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # ADD I, Vx - Fx1E.
@@ -598,10 +522,7 @@ defmodule ExChip8.Instructions do
       state.registers
       |> Map.update!(:i, fn i_value -> i_value + vx end)
 
-    {
-      "ADD I, Vx - Fx1E: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD F, Vx - Fx29.
@@ -615,10 +536,7 @@ defmodule ExChip8.Instructions do
       state.registers
       |> Map.replace!(:i, vx * @chip8_default_sprite_height)
 
-    {
-      "LD F, Vx - Fx29: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   # LD B, Vx - Fx33.
@@ -638,10 +556,7 @@ defmodule ExChip8.Instructions do
       |> ExChip8.Memory.memory_set(state.registers.i + 1, tens)
       |> ExChip8.Memory.memory_set(state.registers.i + 2, units)
 
-    {
-      "LD F, Vx - Fx29: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :memory, updated_memory)
-    }
+    Map.replace!(state, :memory, updated_memory)
   end
 
   # LD [I], Vx - Fx55
@@ -658,10 +573,7 @@ defmodule ExChip8.Instructions do
         |> ExChip8.Memory.memory_set(state.registers.i + i, vi)
       end)
 
-    {
-      "LD [I], Vx - Fx55: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :memory, updated_memory)
-    }
+    Map.replace!(state, :memory, updated_memory)
   end
 
   # LD Vx, [I] - Fx65
@@ -681,10 +593,7 @@ defmodule ExChip8.Instructions do
         Map.replace!(updated_registers, :v, updated_v_register)
       end)
 
-    {
-      "LD Vx, [I] - Fx65: #{Integer.to_charlist(x, 16)}",
-      Map.replace!(state, :registers, updated_registers)
-    }
+    Map.replace!(state, :registers, updated_registers)
   end
 
   defp _exec(%State{} = state, opcode, _) do
