@@ -32,13 +32,6 @@ defmodule ExChip8.Screen do
     {screen, memory, registers, stack, keyboard}
   end
 
-  def char(%Screen{} = screen, x, y) do
-    case screen_is_set?(screen, x, y) do
-      true -> "■"
-      false -> " "
-    end
-  end
-
   def screen_set(%Screen{} = screen, x, y) do
     row = Enum.at(screen.pixels, y)
     updated_row = List.replace_at(row, x, true)

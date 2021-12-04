@@ -15,6 +15,9 @@ defmodule ExChip8.Scenes.Game do
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
   @chip8_program_load_address Application.get_env(:ex_chip8, :chip8_program_load_address)
 
+  require Logger
+
+  @impl true
   def init(_, opts) do
     viewport = opts[:viewport]
 
@@ -45,6 +48,7 @@ defmodule ExChip8.Scenes.Game do
     {:ok, state, push: graph}
   end
 
+  @impl true
   def handle_info(
         :frame,
         %{frame_count: frame_count, chip8: {screen, memory, registers, stack, keyboard} = chip8} =
@@ -82,6 +86,34 @@ defmodule ExChip8.Scenes.Game do
     {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode, chip8: updated_chip8},
      push: graph}
   end
+
+  @impl true
+  def handle_input(
+        {:key, {pressed_key, :press, _}},
+        _context,
+        %{
+          chip8: {screen, memory, registers, stack, keyboard}
+        } = state
+      ) do
+    index = Keyboard.keyboard_map(keyboard, pressed_key)
+
+    case index do
+      false ->
+        {:noreply, state}
+
+      _ ->
+        updated_keyboard =
+          keyboard
+          |> Keyboard.keyboard_down(index)
+          |> Map.put(:pressed_key, pressed_key)
+
+        updated_chip8 = {screen, memory, registers, stack, updated_keyboard}
+        {:noreply, %{state | chip8: updated_chip8}}
+    end
+  end
+
+  @impl true
+  def handle_input(_, _, state), do: {:noreply, state}
 
   defp draw_chip8(
          graph,
