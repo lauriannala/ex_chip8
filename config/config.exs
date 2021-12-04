@@ -2,9 +2,11 @@ use Mix.Config
 
 width = 64
 height = 32
+tile_size = 16
+config :ex_chip8, :chip8_tile_size, tile_size
 config :ex_chip8, :chip8_width, width
 config :ex_chip8, :chip8_height, height
-config :ex_chip8, :sleep_wait_period, 2
+config :ex_chip8, :sleep_wait_period, 100
 # config :ex_chip8, :sleep_wait_period, 1000
 config :ex_chip8, :chip8_memory_size, 4096
 config :ex_chip8, :chip8_total_data_registers, 16
@@ -16,7 +18,7 @@ config :ex_chip8, :chip8_default_sprite_height, 5
 
 config :ex_chip8, :viewport, %{
   name: :main_viewport,
-  size: {width * 10, height * 10},
+  size: {width * tile_size, height * tile_size},
   default_scene: {ExChip8.Scenes.Game, 0x0000},
   drivers: [
     %{
