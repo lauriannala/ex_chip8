@@ -6,7 +6,7 @@ tile_size = 16
 config :ex_chip8, :chip8_tile_size, tile_size
 config :ex_chip8, :chip8_width, width
 config :ex_chip8, :chip8_height, height
-config :ex_chip8, :sleep_wait_period, 10
+config :ex_chip8, :sleep_wait_period, 5
 config :ex_chip8, :chip8_memory_size, 4096
 config :ex_chip8, :chip8_total_data_registers, 16
 config :ex_chip8, :chip8_total_stack_depth, 16

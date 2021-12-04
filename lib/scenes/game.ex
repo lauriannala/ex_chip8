@@ -41,11 +41,7 @@ defmodule ExChip8.Scenes.Game do
       chip8: chip8
     }
 
-    graph =
-      state.graph
-      |> draw_opcode(state.opcode)
-
-    {:ok, state, push: graph}
+    {:ok, state, push: state.graph}
   end
 
   @impl true
@@ -76,7 +72,6 @@ defmodule ExChip8.Scenes.Game do
     graph =
       state.graph
       |> draw_chip8(updated_chip8)
-      |> draw_opcode(opcode)
 
     updated_chip8 =
       updated_chip8
@@ -168,13 +163,4 @@ defmodule ExChip8.Scenes.Game do
     graph |> rectangle({@chip8_tile_size, @chip8_tile_size}, tile_opts)
   end
 
-  defp draw_opcode(graph, opcode) do
-    hex_format = Integer.to_charlist(opcode, 16)
-
-    graph
-    |> text("Opcode: 0x#{hex_format}",
-      fill: :white,
-      translate: {@chip8_tile_size, @chip8_tile_size}
-    )
-  end
 end
