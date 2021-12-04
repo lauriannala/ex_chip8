@@ -162,5 +162,4 @@ defmodule ExChip8.Scenes.Game do
 
     graph |> rectangle({@chip8_tile_size, @chip8_tile_size}, tile_opts)
   end
-
 end
