@@ -159,11 +159,11 @@ defmodule ExChip8.Screen do
     if registers.delay_timer == 0 do
       state
     else
-      # :timer.sleep(10)
+      :timer.sleep(10)
 
       updated_registers =
         registers
-        |> Map.replace!(:delay_timer, 0)
+        |> Map.update!(:delay_timer, fn t -> t - 1 end)
 
       {screen, memory, updated_registers, stack, keyboard}
     end
@@ -175,7 +175,7 @@ defmodule ExChip8.Screen do
     else
       updated_registers =
         registers
-        |> Map.replace!(:sound_timer, 0)
+        |> Map.update!(:sound_timer, fn t -> t - 1 end)
 
       {screen, memory, updated_registers, stack, keyboard}
     end
