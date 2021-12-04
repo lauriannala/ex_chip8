@@ -95,6 +95,11 @@ defmodule ExChip8.Scenes.Game do
         end)
       end)
 
+    state =
+      state
+      |> apply_delay()
+      |> apply_sound()
+
     {graph, state}
   end
 

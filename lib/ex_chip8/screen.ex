@@ -203,13 +203,15 @@ defmodule ExChip8.Screen do
       state
       |> apply_delay()
       |> apply_sound()
+
+    state
   end
 
   def apply_delay(%State{} = state) do
     if state.registers.delay_timer == 0 do
       state
     else
-      :timer.sleep(100)
+      :timer.sleep(10)
 
       updated_registers =
         state.registers
