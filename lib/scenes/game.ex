@@ -1,8 +1,9 @@
 defmodule ExChip8.Scenes.Game do
   use Scenic.Scene
   alias Scenic.Graph
-  alias ExChip8.State
-  import Scenic.Primitives, only: [text: 3]
+  alias ExChip8.{State, Screen, Keyboard}
+  import Scenic.Primitives, only: [rectangle: 3, text: 3]
+  import ExChip8.Screen
 
   @chip8_tile_size Application.get_env(:ex_chip8, :chip8_tile_size)
   @graph Graph.build(font: :roboto, font_size: @chip8_tile_size)
@@ -72,8 +73,36 @@ defmodule ExChip8.Scenes.Game do
      push: graph}
   end
 
-  defp draw_chip8(graph, %State{} = state) do
+  defp draw_chip8(
+         graph,
+         %State{
+           screen:
+             %Screen{
+               sleep_wait_period: sleep_wait_period,
+               chip8_height: chip8_height,
+               chip8_width: chip8_width
+             } = screen,
+           keyboard: %Keyboard{} = keyboard
+         } = state
+       ) do
+    graph =
+      Enum.reduce(0..(chip8_height - 1), graph, fn y, tranform_y ->
+        Enum.reduce(0..(chip8_width - 1), tranform_y, fn x, tranform_x ->
+          case screen_is_set?(screen, x, y) do
+            true -> draw_tile(tranform_x, x, y)
+            false -> draw_tile(tranform_x, x, y, fill: :black)
+          end
+        end)
+      end)
+
     {graph, state}
+  end
+
+  defp draw_tile(graph, x, y, opts \\ []) do
+    tile_opts =
+      Keyword.merge([fill: :white, translate: {x * @chip8_tile_size, y * @chip8_tile_size}], opts)
+
+    graph |> rectangle({@chip8_tile_size, @chip8_tile_size}, tile_opts)
   end
 
   defp draw_opcode(graph, opcode) do
