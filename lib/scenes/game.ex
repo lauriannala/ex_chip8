@@ -113,6 +113,31 @@ defmodule ExChip8.Scenes.Game do
   end
 
   @impl true
+  def handle_input(
+        {:key, {pressed_key, :release, _}},
+        _context,
+        %{
+          chip8: {screen, memory, registers, stack, keyboard}
+        } = state
+      ) do
+    index = Keyboard.keyboard_map(keyboard, pressed_key)
+
+    case index do
+      false ->
+        {:noreply, state}
+
+      _ ->
+        updated_keyboard =
+          keyboard
+          |> Keyboard.keyboard_up(index)
+          |> Map.put(:pressed_key, pressed_key)
+
+        updated_chip8 = {screen, memory, registers, stack, updated_keyboard}
+        {:noreply, %{state | chip8: updated_chip8}}
+    end
+  end
+
+  @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
   defp draw_chip8(
