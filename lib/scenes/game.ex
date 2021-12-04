@@ -2,7 +2,7 @@ defmodule ExChip8.Scenes.Game do
   use Scenic.Scene
   alias Scenic.Graph
   alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
-  import Scenic.Primitives, only: [rectangle: 3, text: 3]
+  import Scenic.Primitives, only: [rectangle: 3]
   import ExChip8.Screen
 
   @chip8_tile_size Application.get_env(:ex_chip8, :chip8_tile_size)
@@ -15,6 +15,8 @@ defmodule ExChip8.Scenes.Game do
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
   @chip8_program_load_address Application.get_env(:ex_chip8, :chip8_program_load_address)
 
+  @chip8_filename Application.get_env(:ex_chip8, :filename)
+
   require Logger
 
   @impl true
@@ -23,8 +25,7 @@ defmodule ExChip8.Scenes.Game do
 
     chip8 =
       {%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}
-      # TODO: as parameter
-      |> ExChip8.create_state("TETRIS")
+      |> ExChip8.create_state(@chip8_filename)
       |> ExChip8.init(@default_character_set)
       |> ExChip8.read_file_to_memory(@chip8_program_load_address)
 

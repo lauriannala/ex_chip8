@@ -1,5 +1,6 @@
 use Mix.Config
 
+config :ex_chip8, :filename, "TETRIS"
 width = 64
 height = 32
 tile_size = 16

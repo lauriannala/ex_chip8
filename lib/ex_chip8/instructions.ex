@@ -150,8 +150,7 @@ defmodule ExChip8.Instructions do
     updated_v_register =
       List.update_at(registers.v, x, fn v ->
         sum = v + kk
-        <<to_8_bit_int, 8>> = <<sum, 8>>
-        # TODO: <<to_8_bit_int::8>> = <<sum::8>>
+        <<to_8_bit_int::8>> = <<sum::8>>
         to_8_bit_int
       end)
 
