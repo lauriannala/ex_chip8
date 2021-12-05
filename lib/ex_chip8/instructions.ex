@@ -4,6 +4,8 @@ defmodule ExChip8.Instructions do
 
   import Bitwise
 
+  require Logger
+
   @chip8_default_sprite_height Application.get_env(:ex_chip8, :chip8_default_sprite_height)
 
   def exec(state, opcode) do
@@ -12,6 +14,8 @@ defmodule ExChip8.Instructions do
     y = opcode >>> 4 &&& 0x000F
     kk = opcode &&& 0x00FF
     n = opcode &&& 0x000F
+
+    Logger.info("0x#{Integer.to_charlist(opcode, 16)}")
 
     exec_result =
       _exec(state, opcode, %{
