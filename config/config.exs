@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ex_chip8, :filename, "TETRIS"
 width = 64
