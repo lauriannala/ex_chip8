@@ -3,7 +3,8 @@ defmodule ExChip8.Application do
     main_viewport_config = Application.get_env(:ex_chip8, :viewport)
 
     children = [
-      {Scenic, viewports: [main_viewport_config]}
+      {Scenic, viewports: [main_viewport_config]},
+      ExChip8.StateServer
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)

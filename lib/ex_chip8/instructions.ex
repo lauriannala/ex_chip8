@@ -15,8 +15,6 @@ defmodule ExChip8.Instructions do
     kk = opcode &&& 0x00FF
     n = opcode &&& 0x000F
 
-    Logger.info("0x#{Integer.to_charlist(opcode, 16)}")
-
     exec_result =
       _exec(state, opcode, %{
         nnn: nnn,
