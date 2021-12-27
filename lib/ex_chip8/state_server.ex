@@ -3,6 +3,7 @@ defmodule ExChip8.StateServer do
 
   @default_state :ok
   @v_register :v_register
+  @registers :registers
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, @default_state, name: __MODULE__)
@@ -18,15 +19,15 @@ defmodule ExChip8.StateServer do
       write_concurrency: false
     ])
 
+    :ets.new(@registers, [
+      :set,
+      :named_table,
+      :public,
+      read_concurrency: false,
+      write_concurrency: false
+    ])
+
     {:ok, state}
-  end
-
-  def lookup_v_register(index) do
-    GenServer.call(__MODULE__, {:lookup_v_register, index})
-  end
-
-  def insert_v_register(index, value) do
-    GenServer.call(__MODULE__, {:insert_v_register, index, value})
   end
 
   @impl true
@@ -38,6 +39,18 @@ defmodule ExChip8.StateServer do
   @impl true
   def handle_call({:insert_v_register, index, value}, _pid, @default_state) do
     :ets.insert(@v_register, {index, value})
+    {:reply, value, @default_state}
+  end
+
+  @impl true
+  def handle_call({:lookup_register, register}, _pid, @default_state) do
+    value = :ets.lookup(@registers, register)
+    {:reply, value, @default_state}
+  end
+
+  @impl true
+  def handle_call({:insert_register, register, value}, _pid, @default_state) do
+    :ets.insert(@registers, {register, value})
     {:reply, value, @default_state}
   end
 end

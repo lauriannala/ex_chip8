@@ -1,5 +1,6 @@
 defmodule ExChip8.Stack do
   alias ExChip8.Stack
+  alias ExChip8.Registers
 
   defstruct stack: []
 
@@ -12,20 +13,23 @@ defmodule ExChip8.Stack do
   end
 
   def stack_push({stack, registers}, value) do
-    if registers.sp + 1 >= length(stack.stack),
+    sp = Registers.lookup_register(:sp)
+
+    if sp + 1 >= length(stack.stack),
       do: raise("Stack pointer out of bounds.")
 
-    updated_stack_list = List.replace_at(stack.stack, registers.sp, value)
+    updated_stack_list = List.replace_at(stack.stack, sp, value)
 
     updated_stack = Map.put(stack, :stack, updated_stack_list)
 
-    registers = Map.update!(registers, :sp, fn stack_pointer -> stack_pointer + 1 end)
+    Registers.insert_register(:sp, sp + 1)
     {updated_stack, registers}
   end
 
   def stack_pop({stack, registers}) do
-    registers = Map.update!(registers, :sp, fn stack_pointer -> stack_pointer - 1 end)
+    sp = Registers.lookup_register(:sp)
+    Registers.insert_register(:sp, sp - 1)
 
-    {registers, Enum.at(stack.stack, registers.sp)}
+    {registers, Enum.at(stack.stack, Registers.lookup_register(:sp))}
   end
 end

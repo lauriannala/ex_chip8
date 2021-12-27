@@ -26,6 +26,8 @@ defmodule ExChip8 do
     "F"
   ]
 
+  alias ExChip8.Registers
+
   def create_state(state), do: create_state(state, "GAME")
 
   def create_state(state, filename) do
@@ -75,10 +77,8 @@ defmodule ExChip8 do
         ExChip8.Memory.memory_set(memory, index, byte)
       end)
 
-    updated_registers =
-      registers
-      |> Map.put(:pc, load_address)
+    Registers.insert_register(:pc, load_address)
 
-    {screen, updated_memory, updated_registers, stack, keyboard}
+    {screen, updated_memory, registers, stack, keyboard}
   end
 end

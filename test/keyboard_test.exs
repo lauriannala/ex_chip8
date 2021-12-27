@@ -1,14 +1,14 @@
 defmodule ExChip8.KeyboardTest do
   use ExUnit.Case
 
-  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
+  alias ExChip8.{Screen, Memory, Stack, Keyboard}
 
   describe "Unitialized keyboard" do
     test "init/2 initializes keys" do
       size = 16
 
       {_, _, _, _, keyboard} =
-        Keyboard.init({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}, size)
+        Keyboard.init({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}, size)
 
       assert length(keyboard.keyboard) == size
       assert Enum.all?(keyboard.keyboard, &(&1 == false)) == true
@@ -77,14 +77,14 @@ defmodule ExChip8.KeyboardTest do
 
   defp initialize_keyboard(_) do
     {_, _, _, _, keyboard} =
-      state = Keyboard.init({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}, 16)
+      state = Keyboard.init({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}, 16)
 
     %{keyboard: keyboard, state: state}
   end
 
   defp initialize_keyboard_with_map(_) do
     {_, _, _, _, keyboard} =
-      {%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}
+      {%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}
       |> Keyboard.init(16)
       |> Keyboard.keyboard_set_map([?0, ?1, ?2])
 

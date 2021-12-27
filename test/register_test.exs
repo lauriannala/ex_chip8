@@ -8,10 +8,9 @@ defmodule ExChip8.RegisterTest do
     test "init/2 initializes registers" do
       v_size = 100
 
-      {_, _, registers, _, _} =
-        Registers.init({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}, v_size)
+      {_, _, _, _, _} = Registers.init({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}, v_size)
 
-      assert length(registers.v) == v_size
+      assert :ets.info(:v_register)[:size] == v_size
     end
   end
 end

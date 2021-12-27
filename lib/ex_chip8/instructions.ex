@@ -1,6 +1,7 @@
 defmodule ExChip8.Instructions do
   alias ExChip8.Screen
   alias ExChip8.Stack
+  alias ExChip8.Registers
 
   import Bitwise
 
@@ -42,11 +43,10 @@ defmodule ExChip8.Instructions do
 
   # RET - Return from subroutine.
   defp _exec({screen, memory, registers, stack, keyboard}, 0x00EE, _) do
-    {updated_registers, pc} = Stack.stack_pop({stack, registers})
+    {_, pc} = Stack.stack_pop({stack, registers})
+    Registers.insert_register(:pc, pc)
 
-    updated_registers = Map.replace!(updated_registers, :pc, pc)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # JP addr - 1nnn, Jump to location nnn.
@@ -54,9 +54,9 @@ defmodule ExChip8.Instructions do
          nnn: nnn
        })
        when (opcode &&& 0xF000) == 0x1000 do
-    updated_registers = Map.replace!(registers, :pc, nnn)
+    Registers.insert_register(:pc, nnn)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # CALL addr - 2nnn, Call subroutine at location nnn.
@@ -64,8 +64,10 @@ defmodule ExChip8.Instructions do
          nnn: nnn
        })
        when (opcode &&& 0xF000) == 0x2000 do
-    {updated_stack, updated_registers} = Stack.stack_push({stack, registers}, registers.pc)
-    updated_registers = Map.replace!(updated_registers, :pc, nnn)
+    pc = Registers.lookup_register(:pc)
+    {updated_stack, updated_registers} = Stack.stack_push({stack, registers}, pc)
+
+    Registers.insert_register(:pc, nnn)
 
     {screen, memory, updated_registers, updated_stack, keyboard}
   end
@@ -76,18 +78,14 @@ defmodule ExChip8.Instructions do
          kk: kk
        })
        when (opcode &&& 0xF000) == 0x3000 do
-    vx = Enum.at(registers.v, x)
+    vx = Registers.lookup_v_register(x)
 
-    updated_registers =
-      case vx == kk do
-        true ->
-          Map.update!(registers, :pc, fn counter -> counter + 2 end)
+    if vx == kk do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
+    end
 
-        false ->
-          registers
-      end
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SE Vx, byte - 4xkk, Skip next instruction if Vx!=kk.
@@ -96,18 +94,14 @@ defmodule ExChip8.Instructions do
          kk: kk
        })
        when (opcode &&& 0xF000) == 0x4000 do
-    reg_val = Enum.at(registers.v, x)
+    reg_val = Registers.lookup_v_register(x)
 
-    updated_registers =
-      case reg_val != kk do
-        true ->
-          Map.update!(registers, :pc, fn counter -> counter + 2 end)
+    if reg_val != kk do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
+    end
 
-        false ->
-          registers
-      end
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SE Vx, Vy - 5xy0, Skip next instruction if Vx == Vy.
@@ -116,19 +110,15 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF000) == 0x5000 do
-    vx = Enum.at(registers.v, x)
-    vy = Enum.at(registers.v, y)
+    vx = Registers.lookup_v_register(x)
+    vy = Registers.lookup_v_register(y)
 
-    updated_registers =
-      case vx == vy do
-        true ->
-          Map.update!(registers, :pc, fn counter -> counter + 2 end)
+    if vx == vy do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
+    end
 
-        false ->
-          registers
-      end
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD Vx, byte - 6xkk, Vx = kk.
@@ -137,10 +127,9 @@ defmodule ExChip8.Instructions do
          kk: kk
        })
        when (opcode &&& 0xF000) == 0x6000 do
-    updated_v_register = List.replace_at(registers.v, x, kk)
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
+    Registers.insert_v_register(x, kk)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # ADD Vx, byte - 7xkk, Set Vx = Vx + kk.
@@ -149,16 +138,12 @@ defmodule ExChip8.Instructions do
          kk: kk
        })
        when (opcode &&& 0xF000) == 0x7000 do
-    updated_v_register =
-      List.update_at(registers.v, x, fn v ->
-        sum = v + kk
-        <<to_8_bit_int::8>> = <<sum::8>>
-        to_8_bit_int
-      end)
+    v = Registers.lookup_v_register(x)
+    sum = v + kk
+    <<to_8_bit_int::8>> = <<sum::8>>
+    Registers.insert_v_register(x, to_8_bit_int)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD Vx, Vy - 8xy0, Vx = Vy.
@@ -167,12 +152,10 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8000 do
-    y_value = Enum.at(registers.v, y)
-    updated_v_register = List.replace_at(registers.v, x, y_value)
+    y_value = Registers.lookup_v_register(y)
+    Registers.insert_v_register(x, y_value)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # OR Vx, Vy - 8xy1, Performs an bitwise OR on Vx and Vy and stores the result in Vx.
@@ -181,13 +164,12 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8001 do
-    y_value = Enum.at(registers.v, y)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_v_register = List.update_at(registers.v, x, fn x_value -> x_value ||| y_value end)
+    Registers.insert_v_register(x, x_value ||| y_value)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   #  AND Vx, Vy - 8xy2, Performs an bitwise AND on Vx and Vy and stores the result in Vx.
@@ -196,13 +178,12 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8002 do
-    y_value = Enum.at(registers.v, y)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_v_register = List.update_at(registers.v, x, fn x_value -> x_value &&& y_value end)
+    Registers.insert_v_register(x, x_value &&& y_value)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # XOR Vx, Vy - 8xy3, Performs an bitwise XOR on Vx and Vy and stores the result in Vx.
@@ -211,13 +192,12 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8003 do
-    y_value = Enum.at(registers.v, y)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_v_register = List.update_at(registers.v, x, fn x_value -> bxor(x_value, y_value) end)
+    Registers.insert_v_register(x, bxor(x_value, y_value))
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # ADD Vx, Vy - 8xy4, Set Vx = Vx + Vy, set VF = carry.
@@ -226,20 +206,17 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8004 do
-    y_value = Enum.at(registers.v, y)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_x = Enum.at(registers.v, x) + y_value
+    updated_x = x_value + y_value
 
     updated_vf = updated_x > 0xFF
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
-      |> List.replace_at(0x0F, updated_vf)
+    Registers.insert_v_register(x, updated_x)
+    Registers.insert_v_register(0x0F, updated_vf)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SUB Vx, Vy - 8xy5, Set Vx = Vx - Vy, set VF = Not borrow.
@@ -248,21 +225,17 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8005 do
-    y_value = Enum.at(registers.v, y)
-    x_value = Enum.at(registers.v, x)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
     updated_x = x_value - y_value
 
     updated_vf = x_value > y_value
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
-      |> List.replace_at(0x0F, updated_vf)
+    Registers.insert_v_register(x, updated_x)
+    Registers.insert_v_register(0x0F, updated_vf)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SHR Vx {, Vy} - 8xy6.
@@ -270,20 +243,16 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF00F) == 0x8006 do
-    x_value = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
     updated_x = div(x_value, 2)
 
     updated_vf = x_value &&& 0x01
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
-      |> List.replace_at(0x0F, updated_vf)
+    Registers.insert_v_register(x, updated_x)
+    Registers.insert_v_register(0x0F, updated_vf)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SUBN Vx, Vy - 8xy7.
@@ -292,20 +261,16 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF00F) == 0x8007 do
-    y_value = Enum.at(registers.v, y)
-    x_value = Enum.at(registers.v, x)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
     updated_vf = y_value > x_value
     updated_x = y_value - x_value
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
-      |> List.replace_at(0x0F, updated_vf)
+    Registers.insert_v_register(x, updated_x)
+    Registers.insert_v_register(0x0F, updated_vf)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SHL Vx {, Vy} - 8xyE.
@@ -313,19 +278,15 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF00F) == 0x800E do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_vf = vx &&& 0b10000000
-    updated_x = vx * 2
+    updated_vf = x_value &&& 0b10000000
+    updated_x = x_value * 2
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
-      |> List.replace_at(0x0F, updated_vf)
+    Registers.insert_v_register(x, updated_x)
+    Registers.insert_v_register(0x0F, updated_vf)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SNE Vx, Vy - 9xy0, Skip next instruction if Vx != Vy.
@@ -334,19 +295,15 @@ defmodule ExChip8.Instructions do
          y: y
        })
        when (opcode &&& 0xF000) == 0x9000 do
-    vx = Enum.at(registers.v, x)
-    vy = Enum.at(registers.v, y)
+    y_value = Registers.lookup_v_register(y)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers =
-      case vx != vy do
-        true ->
-          Map.update!(registers, :pc, fn counter -> counter + 2 end)
+    if x_value != y_value do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
+    end
 
-        false ->
-          registers
-      end
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD I, addr - Annn, Sets the I register to nnn.
@@ -354,9 +311,9 @@ defmodule ExChip8.Instructions do
          nnn: nnn
        })
        when (opcode &&& 0xF000) == 0xA000 do
-    updated_registers = Map.replace!(registers, :i, nnn)
+    Registers.insert_register(:i, nnn)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # RND Vx, byte - Cxkk
@@ -367,13 +324,9 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF000) == 0xC000 do
     updated_x = :rand.uniform(255) &&& kk
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
+    Registers.insert_v_register(x, updated_x)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # DRW Vx, Vy, nibble - Dxyn, Draws sprite to the screen.
@@ -383,25 +336,21 @@ defmodule ExChip8.Instructions do
          n: n
        })
        when (opcode &&& 0xF000) == 0xD000 do
-    sprite_index = registers.i
+    sprite_index = Registers.lookup_register(:i)
 
     %{collision: updated_vf, screen: updated_screen} =
       Screen.screen_draw_sprite(%{
         screen: screen,
-        x: Enum.at(registers.v, x),
-        y: Enum.at(registers.v, y),
+        x: Registers.lookup_v_register(x),
+        y: Registers.lookup_v_register(y),
         memory: memory,
         sprite_index: sprite_index,
         num: n
       })
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(0x0F, boolean_to_integer(updated_vf))
+    Registers.insert_v_register(0x0F, boolean_to_integer(updated_vf))
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {updated_screen, memory, updated_registers, stack, keyboard}
+    {updated_screen, memory, registers, stack, keyboard}
   end
 
   # SKP Vx - Ex9E, Skip the next instruction if the key with the value of Vx is pressed.
@@ -409,18 +358,14 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xE09E do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers =
-      case ExChip8.Keyboard.keyboard_is_down(keyboard, vx) do
-        true ->
-          Map.update!(registers, :pc, fn counter -> counter + 2 end)
+    if ExChip8.Keyboard.keyboard_is_down(keyboard, x_value) do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
+    end
 
-        false ->
-          registers
-      end
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # SKP Vx - ExA1, Skip the next instruction if the key with the value of Vx is NOT pressed.
@@ -428,18 +373,14 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xE0A1 do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers =
-      case not ExChip8.Keyboard.keyboard_is_down(keyboard, vx) do
-        true ->
-          Map.update!(registers, :pc, fn counter -> counter + 2 end)
+    if not ExChip8.Keyboard.keyboard_is_down(keyboard, x_value) do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
+    end
 
-        false ->
-          registers
-      end
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD Vx, DT - Fx07, Set Vx to the delay timer value.
@@ -447,15 +388,11 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF007 do
-    updated_x = registers.delay_timer
+    updated_x = Registers.lookup_register(:delay_timer)
 
-    updated_v_register =
-      registers.v
-      |> List.replace_at(x, updated_x)
+    Registers.insert_v_register(x, updated_x)
 
-    updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD Vx, K - fx0A.
@@ -471,13 +408,9 @@ defmodule ExChip8.Instructions do
         :wait_for_key_press
 
       _ ->
-        updated_v_register =
-          registers.v
-          |> List.replace_at(x, pressed_key_index)
+        Registers.insert_v_register(x, pressed_key_index)
 
-        updated_registers = Map.replace!(registers, :v, updated_v_register)
-
-        {screen, memory, updated_registers, stack, keyboard}
+        {screen, memory, registers, stack, keyboard}
     end
   end
 
@@ -486,11 +419,11 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF015 do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers = Map.replace!(registers, :delay_timer, vx)
+    Registers.insert_register(:delay_timer, x_value)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD ST, Vx, K - Fx18, Set sound_timer to Vx.
@@ -498,11 +431,11 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF018 do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers = Map.replace!(registers, :sound_timer, vx)
+    Registers.insert_register(:sound_timer, x_value)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # ADD I, Vx - Fx1E.
@@ -510,13 +443,12 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF01E do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers =
-      registers
-      |> Map.update!(:i, fn i_value -> i_value + vx end)
+    i_value = Registers.lookup_register(:i)
+    Registers.insert_register(:i, i_value + x_value)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD F, Vx - Fx29.
@@ -524,13 +456,11 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF029 do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    updated_registers =
-      registers
-      |> Map.replace!(:i, vx * @chip8_default_sprite_height)
+    Registers.insert_register(:i, x_value * @chip8_default_sprite_height)
 
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD B, Vx - Fx33.
@@ -538,17 +468,19 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF033 do
-    vx = Enum.at(registers.v, x)
+    x_value = Registers.lookup_v_register(x)
 
-    hundreds = vx |> div(100)
-    tens = vx |> div(10) |> rem(10)
-    units = vx |> rem(10)
+    hundreds = x_value |> div(100)
+    tens = x_value |> div(10) |> rem(10)
+    units = x_value |> rem(10)
+
+    i_value = Registers.lookup_register(:i)
 
     updated_memory =
       memory
-      |> ExChip8.Memory.memory_set(registers.i, hundreds)
-      |> ExChip8.Memory.memory_set(registers.i + 1, tens)
-      |> ExChip8.Memory.memory_set(registers.i + 2, units)
+      |> ExChip8.Memory.memory_set(i_value, hundreds)
+      |> ExChip8.Memory.memory_set(i_value + 1, tens)
+      |> ExChip8.Memory.memory_set(i_value + 2, units)
 
     {screen, updated_memory, registers, stack, keyboard}
   end
@@ -561,10 +493,10 @@ defmodule ExChip8.Instructions do
     updated_memory =
       0..(x - 1)
       |> Enum.reduce(memory, fn i, updated_memory ->
-        vi = Enum.at(registers.v, i)
+        vi = Registers.lookup_v_register(i)
 
         updated_memory
-        |> ExChip8.Memory.memory_set(registers.i + i, vi)
+        |> ExChip8.Memory.memory_set(Registers.lookup_register(:i) + i, vi)
       end)
 
     {screen, updated_memory, registers, stack, keyboard}
@@ -575,19 +507,15 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF065 do
-    updated_registers =
-      0..(x - 1)
-      |> Enum.reduce(registers, fn i, updated_registers ->
-        value_from_memory = ExChip8.Memory.memory_get(memory, registers.i + 1)
+    0..(x - 1)
+    |> Enum.each(fn i ->
+      i_value = Registers.lookup_register(:i)
+      value_from_memory = ExChip8.Memory.memory_get(memory, i_value + 1)
 
-        updated_v_register =
-          registers.v
-          |> List.replace_at(i, value_from_memory)
+      Registers.insert_v_register(i, value_from_memory)
+    end)
 
-        Map.replace!(updated_registers, :v, updated_v_register)
-      end)
-
-    {screen, memory, updated_registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   defp _exec(_, opcode, _) do

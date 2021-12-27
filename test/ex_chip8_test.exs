@@ -2,7 +2,7 @@ defmodule ExChip8Test do
   use ExUnit.Case
 
   alias ExChip8
-  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
+  alias ExChip8.{Screen, Memory, Stack, Keyboard}
 
   describe "ExChip8 uninitialized" do
     test "create_state/0 creates state" do
@@ -12,8 +12,8 @@ defmodule ExChip8Test do
       chip8_memory_size = Application.get_env(:ex_chip8, :chip8_memory_size)
       chip8_total_data_registers = Application.get_env(:ex_chip8, :chip8_total_data_registers)
 
-      {:ok, {screen, memory, registers, _, _}, _} =
-        ExChip8.create_state({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}})
+      {:ok, {screen, memory, _, _, _}, _} =
+        ExChip8.create_state({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}})
 
       assert screen.sleep_wait_period == sleep_wait_period
       assert screen.chip8_height == chip8_height
@@ -21,7 +21,7 @@ defmodule ExChip8Test do
 
       assert length(memory.memory) == chip8_memory_size
 
-      assert length(registers.v) == chip8_total_data_registers
+      assert :ets.info(:v_register)[:size] == chip8_total_data_registers
     end
   end
 
@@ -51,7 +51,7 @@ defmodule ExChip8Test do
   end
 
   defp with_state(_) do
-    state = ExChip8.create_state({%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}})
+    state = ExChip8.create_state({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}})
     %{state: state}
   end
 end

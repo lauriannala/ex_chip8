@@ -7,6 +7,7 @@ defmodule ExChip8.Screen do
             pixels: []
 
   alias ExChip8.Memory
+  alias ExChip8.Registers
 
   import Bitwise
 
@@ -156,26 +157,26 @@ defmodule ExChip8.Screen do
   end
 
   def apply_delay({screen, memory, registers, stack, keyboard} = state) do
-    if registers.delay_timer == 0 do
+    delay_timer = Registers.lookup_register(:delay_timer)
+
+    if delay_timer == 0 do
       state
     else
-      updated_registers =
-        registers
-        |> Map.update!(:delay_timer, fn t -> t - 1 end)
+      Registers.insert_register(:delay_timer, delay_timer - 1)
 
-      {screen, memory, updated_registers, stack, keyboard}
+      {screen, memory, registers, stack, keyboard}
     end
   end
 
   def apply_sound({screen, memory, registers, stack, keyboard} = state) do
-    if registers.sound_timer == 0 do
+    sound_timer = Registers.lookup_register(:sound_timer)
+
+    if sound_timer == 0 do
       state
     else
-      updated_registers =
-        registers
-        |> Map.update!(:sound_timer, fn t -> t - 1 end)
+      Registers.insert_register(:sound_timer, sound_timer - 1)
 
-      {screen, memory, updated_registers, stack, keyboard}
+      {screen, memory, registers, stack, keyboard}
     end
   end
 end
