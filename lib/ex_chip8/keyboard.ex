@@ -7,40 +7,49 @@ defmodule ExChip8.Keyboard do
 
   def init({screen, memory, registers, stack, _}, k_size) do
     keyboard = %Keyboard{
-      keyboard: 0..(k_size - 1) |> Enum.map(fn _ -> false end)
+      keyboard:
+        0..(k_size - 1)
+        |> Enum.with_index()
+        |> Enum.map(fn {index, _element} -> {index, false} end)
+        |> Map.new()
     }
 
     {screen, memory, registers, stack, keyboard}
   end
 
   def keyboard_set_map({screen, memory, registers, stack, keyboard}, map) do
-    updated_keyboard = Map.put(keyboard, :keyboard_map, map)
+    keyboard_map =
+      map
+      |> Enum.with_index()
+      |> Enum.map(fn {index, element} -> {index, element} end)
+      |> Map.new()
+
+    updated_keyboard = Map.put(keyboard, :keyboard_map, keyboard_map)
     {screen, memory, registers, stack, updated_keyboard}
   end
 
   def keyboard_map(%Keyboard{} = keyboard, char) do
     result =
       keyboard.keyboard_map
-      |> Enum.with_index()
-      |> Enum.find(false, fn {map_value, _} -> map_value == char end)
+      |> Map.get(char, false)
 
     case result do
-      {_, index} -> index
       false -> false
+      index -> index
     end
   end
 
   def keyboard_down(%Keyboard{} = keyboard, index) do
-    updated_keyboard_list = List.replace_at(keyboard.keyboard, index, true)
+    updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, true)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
 
   def keyboard_up(%Keyboard{} = keyboard, index) do
-    updated_keyboard_list = List.replace_at(keyboard.keyboard, index, false)
+    updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, false)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
 
   def keyboard_is_down(%Keyboard{} = keyboard, key) do
-    Enum.at(keyboard.keyboard, key, false)
+    keyboard.keyboard |> Map.get(key, false)
   end
 end

@@ -9,8 +9,8 @@ defmodule ExChip8.KeyboardTest do
 
       {_, _, _, _, keyboard} = Keyboard.init({%Screen{}, nil, nil, nil, %Keyboard{}}, size)
 
-      assert length(keyboard.keyboard) == size
-      assert Enum.all?(keyboard.keyboard, &(&1 == false)) == true
+      assert length(keyboard.keyboard |> Map.keys()) == size
+      assert Enum.all?(keyboard.keyboard |> Map.values(), &(&1 == false)) == true
     end
   end
 
@@ -20,7 +20,7 @@ defmodule ExChip8.KeyboardTest do
     test "keyboard_set_map/2 sets keyboard map", %{state: state} do
       map = [?0, ?1, ?2]
       {_, _, _, _, keyboard} = Keyboard.keyboard_set_map(state, map)
-      assert keyboard.keyboard_map == map
+      assert keyboard.keyboard_map == %{?0 => 0, ?1 => 1, ?2 => 2}
     end
   end
 
@@ -40,12 +40,12 @@ defmodule ExChip8.KeyboardTest do
     test "keyboard_down/2 sets key down at index", %{keyboard: keyboard} do
       keyboard = Keyboard.keyboard_down(keyboard, 0)
 
-      assert Enum.at(keyboard.keyboard, 0) == true
+      assert true == Map.get(keyboard.keyboard, 0)
 
       keyboard = Keyboard.keyboard_down(keyboard, 1)
 
-      assert Enum.at(keyboard.keyboard, 1) == true
-      assert Enum.at(keyboard.keyboard, 2) == false
+      assert true == Map.get(keyboard.keyboard, 1)
+      assert false == Map.get(keyboard.keyboard, 2)
     end
 
     test "keyboard_down/2 sets key up at index", %{keyboard: keyboard} do
@@ -57,12 +57,12 @@ defmodule ExChip8.KeyboardTest do
 
       keyboard = Keyboard.keyboard_up(keyboard, 0)
 
-      assert Enum.at(keyboard.keyboard, 0) == false
+      assert false == Map.get(keyboard.keyboard, 0)
 
       keyboard = Keyboard.keyboard_up(keyboard, 1)
 
-      assert Enum.at(keyboard.keyboard, 1) == false
-      assert Enum.at(keyboard.keyboard, 2) == true
+      assert false == Map.get(keyboard.keyboard, 1)
+      assert true == Map.get(keyboard.keyboard, 2)
     end
 
     test "keyboard_is_down checks if key is pressed on given index", %{keyboard: keyboard} do
