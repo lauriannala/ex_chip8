@@ -27,6 +27,7 @@ defmodule ExChip8 do
   ]
 
   alias ExChip8.Registers
+  alias ExChip8.Memory
 
   def create_state(state), do: create_state(state, "GAME")
 
@@ -48,18 +49,20 @@ defmodule ExChip8 do
   end
 
   def init({:ok, {screen, memory, registers, stack, keyboard}, filename}, character_set) do
+    values = Memory.memory_all_values()
+
     sliced =
       Enum.slice(
-        memory.memory,
-        -(length(memory.memory) - length(character_set)),
-        length(memory.memory)
+        values,
+        -(length(values) - length(character_set)),
+        length(values)
       )
 
     memory_with_character_set = [character_set | sliced] |> List.flatten()
 
-    updated_memory = Map.put(memory, :memory, memory_with_character_set)
+    Memory.initialize_memory(memory_with_character_set)
 
-    {:ok, {screen, updated_memory, registers, stack, keyboard}, filename}
+    {:ok, {screen, memory, registers, stack, keyboard}, filename}
   end
 
   def read_file_to_memory(
@@ -69,16 +72,15 @@ defmodule ExChip8 do
     game_binary = File.read!(filename)
     game_bytes = :binary.bin_to_list(game_binary)
 
-    updated_memory =
-      game_bytes
-      |> Enum.with_index()
-      |> Enum.reduce(memory, fn {byte, byte_index}, memory ->
-        index = byte_index + load_address
-        ExChip8.Memory.memory_set(memory, index, byte)
-      end)
+    game_bytes
+    |> Enum.with_index()
+    |> Enum.each(fn {byte, byte_index} ->
+      index = byte_index + load_address
+      ExChip8.Memory.insert_memory(index, byte)
+    end)
 
     Registers.insert_register(:pc, load_address)
 
-    {screen, updated_memory, registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 end

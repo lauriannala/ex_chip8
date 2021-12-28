@@ -476,13 +476,11 @@ defmodule ExChip8.Instructions do
 
     i_value = Registers.lookup_register(:i)
 
-    updated_memory =
-      memory
-      |> ExChip8.Memory.memory_set(i_value, hundreds)
-      |> ExChip8.Memory.memory_set(i_value + 1, tens)
-      |> ExChip8.Memory.memory_set(i_value + 2, units)
+    ExChip8.Memory.insert_memory(i_value, hundreds)
+    ExChip8.Memory.insert_memory(i_value + 1, tens)
+    ExChip8.Memory.insert_memory(i_value + 2, units)
 
-    {screen, updated_memory, registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD [I], Vx - Fx55
@@ -490,16 +488,15 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF055 do
-    updated_memory =
-      0..(x - 1)
-      |> Enum.reduce(memory, fn i, updated_memory ->
-        vi = Registers.lookup_v_register(i)
+    0..(x - 1)
+    |> Enum.map(fn i ->
+      vi = Registers.lookup_v_register(i)
 
-        updated_memory
-        |> ExChip8.Memory.memory_set(Registers.lookup_register(:i) + i, vi)
-      end)
+      (Registers.lookup_register(:i) + i)
+      |> ExChip8.Memory.insert_memory(vi)
+    end)
 
-    {screen, updated_memory, registers, stack, keyboard}
+    {screen, memory, registers, stack, keyboard}
   end
 
   # LD Vx, [I] - Fx65
@@ -510,7 +507,7 @@ defmodule ExChip8.Instructions do
     0..(x - 1)
     |> Enum.each(fn i ->
       i_value = Registers.lookup_register(:i)
-      value_from_memory = ExChip8.Memory.memory_get(memory, i_value + 1)
+      value_from_memory = ExChip8.Memory.lookup_memory(i_value + 1)
 
       Registers.insert_v_register(i, value_from_memory)
     end)

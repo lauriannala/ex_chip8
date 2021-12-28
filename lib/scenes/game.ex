@@ -24,7 +24,7 @@ defmodule ExChip8.Scenes.Game do
     viewport = opts[:viewport]
 
     chip8 =
-      {%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}
+      {%Screen{}, nil, nil, %Stack{}, %Keyboard{}}
       |> ExChip8.create_state(@chip8_filename)
       |> ExChip8.init(@default_character_set)
       |> ExChip8.read_file_to_memory(@chip8_program_load_address)
@@ -51,7 +51,7 @@ defmodule ExChip8.Scenes.Game do
         %{frame_count: frame_count, chip8: {screen, memory, registers, stack, keyboard} = chip8} =
           state
       ) do
-    opcode = ExChip8.Memory.memory_get_short(memory, Registers.lookup_register(:pc))
+    opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
     pc = Registers.lookup_register(:pc)
     Registers.insert_register(:pc, pc + 2)

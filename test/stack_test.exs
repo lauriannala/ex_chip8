@@ -1,13 +1,13 @@
 defmodule ExChip8.StackTest do
-  use ExUnit.Case
+  use ExChip8.StateCase
 
-  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
+  alias ExChip8.{Screen, Registers, Stack, Keyboard}
 
   describe "Empty stack" do
     test "init/1 initializes stack list" do
       size = 100
 
-      {_, _, _, stack, _} = Stack.init({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}, size)
+      {_, _, _, stack, _} = Stack.init({%Screen{}, nil, nil, %Stack{}, %Keyboard{}}, size)
 
       assert length(stack.stack) == size
     end
@@ -75,7 +75,7 @@ defmodule ExChip8.StackTest do
 
   defp initialize_array(_) do
     state =
-      {%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}}
+      {%Screen{}, nil, nil, %Stack{}, %Keyboard{}}
       |> Registers.init(16)
       |> Stack.init(256)
 

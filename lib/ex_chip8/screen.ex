@@ -113,12 +113,12 @@ defmodule ExChip8.Screen do
         screen: %Screen{} = screen,
         x: x,
         y: y,
-        memory: %Memory{} = memory,
+        memory: _,
         sprite_index: sprite_index,
         num: num
       }) do
     sprite_bytes =
-      memory.memory
+      Memory.memory_all_values()
       |> Enum.drop(sprite_index)
       |> Enum.take(num)
 

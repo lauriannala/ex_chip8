@@ -1,5 +1,5 @@
 defmodule ExChip8Test do
-  use ExUnit.Case
+  use ExChip8.StateCase
 
   alias ExChip8
   alias ExChip8.{Screen, Memory, Stack, Keyboard}
@@ -12,14 +12,14 @@ defmodule ExChip8Test do
       chip8_memory_size = Application.get_env(:ex_chip8, :chip8_memory_size)
       chip8_total_data_registers = Application.get_env(:ex_chip8, :chip8_total_data_registers)
 
-      {:ok, {screen, memory, _, _, _}, _} =
-        ExChip8.create_state({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}})
+      {:ok, {screen, _, _, _, _}, _} =
+        ExChip8.create_state({%Screen{}, nil, nil, %Stack{}, %Keyboard{}})
 
       assert screen.sleep_wait_period == sleep_wait_period
       assert screen.chip8_height == chip8_height
       assert screen.chip8_width == chip8_width
 
-      assert length(memory.memory) == chip8_memory_size
+      assert :ets.info(:memory)[:size] == chip8_memory_size
 
       assert :ets.info(:v_register)[:size] == chip8_total_data_registers
     end
@@ -28,7 +28,7 @@ defmodule ExChip8Test do
   describe "ExChip8 with state" do
     setup [:with_state]
 
-    test "init/1 sets character_set to memory", %{state: {:ok, {_, memory, _, _, _}, _} = state} do
+    test "init/1 sets character_set to memory", %{state: {:ok, {_, _, _, _, _}, _} = state} do
       character_set = [
         0xF0,
         0x90,
@@ -36,22 +36,22 @@ defmodule ExChip8Test do
         0x90
       ]
 
-      original_length = length(memory.memory)
+      original_length = :ets.info(:memory)[:size]
 
-      {:ok, {_, memory, _, _, _}, _} = ExChip8.init(state, character_set)
+      {:ok, {_, _, _, _, _}, _} = ExChip8.init(state, character_set)
 
-      assert Enum.slice(memory.memory, 0..3) ==
+      assert Enum.slice(Memory.memory_all_values(), 0..3) ==
                character_set
 
-      assert Enum.slice(memory.memory, 4, length(memory.memory))
+      assert Enum.slice(Memory.memory_all_values(), 4, :ets.info(:memory)[:size])
              |> Enum.all?(fn x -> x == 0x00 end)
 
-      assert original_length == length(memory.memory)
+      assert original_length == :ets.info(:memory)[:size]
     end
   end
 
   defp with_state(_) do
-    state = ExChip8.create_state({%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}})
+    state = ExChip8.create_state({%Screen{}, nil, nil, %Stack{}, %Keyboard{}})
     %{state: state}
   end
 end

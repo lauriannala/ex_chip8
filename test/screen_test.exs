@@ -1,8 +1,8 @@
 defmodule ExChip8.ScreenTest do
-  use ExUnit.Case
+  use ExChip8.StateCase
 
   alias ExChip8.Screen
-  alias ExChip8.{Screen, Memory, Stack, Keyboard}
+  alias ExChip8.{Screen, Stack, Keyboard}
 
   @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
@@ -11,7 +11,7 @@ defmodule ExChip8.ScreenTest do
     test "init_state/2 initializes correctly" do
       {screen, _, _, _, _} =
         Screen.init_state(
-          {%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}},
+          {%Screen{}, nil, nil, %Stack{}, %Keyboard{}},
           sleep_wait_period: 5,
           chip8_height: 32,
           chip8_width: 64
@@ -161,7 +161,7 @@ defmodule ExChip8.ScreenTest do
   defp initialize(_) do
     state =
       Screen.init_state(
-        {%Screen{}, %Memory{}, nil, %Stack{}, %Keyboard{}},
+        {%Screen{}, nil, nil, %Stack{}, %Keyboard{}},
         sleep_wait_period: 5,
         chip8_height: 32,
         chip8_width: 64
