@@ -1,5 +1,6 @@
 defmodule ExChip8.Screen do
   alias ExChip8.Screen
+  alias ExChip8.StateServer
 
   defstruct sleep_wait_period: 0,
             chip8_height: 0,
@@ -13,8 +14,15 @@ defmodule ExChip8.Screen do
 
   require Logger
 
+  def get_screen() do
+    GenServer.call(StateServer, {:get_screen})
+  end
+
+  def update_screen(%Screen{} = screen) do
+    GenServer.call(StateServer, {:update_screen, screen})
+  end
+
   def init_state(
-        {_, memory, registers, stack, keyboard},
         sleep_wait_period: sleep_wait_period,
         chip8_height: chip8_height,
         chip8_width: chip8_width
@@ -38,7 +46,7 @@ defmodule ExChip8.Screen do
         |> Map.new()
     }
 
-    {screen, memory, registers, stack, keyboard}
+    screen
   end
 
   def screen_set(%Screen{} = screen, x, y) do
@@ -49,6 +57,7 @@ defmodule ExChip8.Screen do
     updated_pixels = screen.pixels |> Map.replace!(y, updated_row)
 
     Map.put(screen, :pixels, updated_pixels)
+    |> update_screen()
   end
 
   def screen_clear(
@@ -79,6 +88,7 @@ defmodule ExChip8.Screen do
     updated_pixels = screen.pixels |> Map.replace!(y, updated_row)
 
     Map.put(screen, :pixels, updated_pixels)
+    |> update_screen()
   end
 
   def screen_is_set?(%Screen{} = screen, x, y) do
@@ -89,12 +99,10 @@ defmodule ExChip8.Screen do
     col
   end
 
-  def screen_draw_sprite(
-        %{
-          screen: %Screen{} = screen
-        } = attrs
-      ) do
+  def screen_draw_sprite(attrs) do
     changeset = screen_draw_sprite_changeset(attrs)
+
+    screen = get_screen()
 
     screen =
       changeset
@@ -118,13 +126,14 @@ defmodule ExChip8.Screen do
   end
 
   def screen_draw_sprite_changeset(%{
-        screen: %Screen{} = screen,
         x: x,
         y: y,
         memory: _,
         sprite_index: sprite_index,
         num: num
       }) do
+    screen = get_screen()
+
     sprite_bytes =
       Memory.memory_all_values()
       |> Enum.drop(sprite_index)

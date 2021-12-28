@@ -34,11 +34,6 @@ defmodule ExChip8 do
   def create_state(state, filename) do
     state =
       state
-      |> ExChip8.Screen.init_state(
-        sleep_wait_period: @sleep_wait_period,
-        chip8_height: @chip8_height,
-        chip8_width: @chip8_width
-      )
       |> ExChip8.Memory.init(@chip8_memory_size)
       |> ExChip8.Registers.init(@chip8_total_data_registers)
       |> ExChip8.Stack.init(@chip8_total_stack_depth)

@@ -1,7 +1,7 @@
 defmodule ExChip8.Scenes.Game do
   use Scenic.Scene
   alias Scenic.Graph
-  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
+  alias ExChip8.{Screen, Registers, Keyboard}
   import Scenic.Primitives, only: [rectangle: 3]
   import ExChip8.Screen
 
@@ -24,7 +24,7 @@ defmodule ExChip8.Scenes.Game do
     viewport = opts[:viewport]
 
     chip8 =
-      {%Screen{}, nil, nil, nil, %Keyboard{}}
+      {nil, nil, nil, nil, %Keyboard{}}
       |> ExChip8.create_state(@chip8_filename)
       |> ExChip8.init(@default_character_set)
       |> ExChip8.read_file_to_memory(@chip8_program_load_address)
@@ -137,9 +137,13 @@ defmodule ExChip8.Scenes.Game do
 
   defp draw_chip8(
          graph,
-         {%Screen{chip8_height: chip8_height, chip8_width: chip8_width} = screen, _memory,
-          _registers, _stack, _keyboard}
+         {_screen, _memory, _registers, _stack, _keyboard}
        ) do
+    %Screen{
+      chip8_height: chip8_height,
+      chip8_width: chip8_width
+    } = screen = Screen.get_screen()
+
     changes =
       0..(chip8_height - 1)
       |> Enum.map(fn y ->

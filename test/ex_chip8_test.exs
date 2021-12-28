@@ -12,8 +12,9 @@ defmodule ExChip8Test do
       chip8_memory_size = Application.get_env(:ex_chip8, :chip8_memory_size)
       chip8_total_data_registers = Application.get_env(:ex_chip8, :chip8_total_data_registers)
 
-      {:ok, {screen, _, _, _, _}, _} =
-        ExChip8.create_state({%Screen{}, nil, nil, nil, %Keyboard{}})
+      {:ok, {_, _, _, _, _}, _} = ExChip8.create_state({%Screen{}, nil, nil, nil, %Keyboard{}})
+
+      screen = Screen.get_screen()
 
       assert screen.sleep_wait_period == sleep_wait_period
       assert screen.chip8_height == chip8_height
