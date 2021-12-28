@@ -7,28 +7,6 @@ defmodule ExChip8.ScreenTest do
   @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
 
-  describe "Unitialized screen" do
-    test "init_state/2 initializes correctly" do
-      {screen, _, _, _, _} =
-        Screen.init_state(
-          {%Screen{}, nil, nil, nil, %Keyboard{}},
-          sleep_wait_period: 5,
-          chip8_height: 32,
-          chip8_width: 64
-        )
-
-      assert screen.sleep_wait_period == 5
-      assert screen.chip8_height == 32
-      assert screen.chip8_width == 64
-
-      assert Enum.at(screen.pixels, 0) ==
-               Enum.map(1..64, fn _ -> false end)
-
-      assert Enum.at(screen.pixels, 31) ==
-               Enum.map(1..64, fn _ -> false end)
-    end
-  end
-
   describe "Initialized screen" do
     setup [:initialize]
 
@@ -38,11 +16,11 @@ defmodule ExChip8.ScreenTest do
     end
 
     test "screen_is_set?/3 raises when out of bounds", %{state: {screen, _, _, _, _}} do
-      assert_raise RuntimeError, fn ->
+      assert_raise MatchError, fn ->
         Screen.screen_is_set?(screen, 64, 0)
       end
 
-      assert_raise RuntimeError, fn ->
+      assert_raise MatchError, fn ->
         Screen.screen_is_set?(screen, 0, 32)
       end
     end
@@ -50,10 +28,10 @@ defmodule ExChip8.ScreenTest do
     test "screen_set/3 updates pixel correctly", %{state: {screen, _, _, _, _}} do
       updated_screen = Screen.screen_set(screen, 10, 15)
 
-      row = Enum.at(updated_screen.pixels, 15)
-      assert Enum.at(row, 10) == true
+      row = Map.get(updated_screen.pixels, 15)
+      assert Map.get(row, 10) == true
 
-      assert Enum.filter(row, fn val -> val == false end)
+      assert Enum.filter(row, fn {_index, val} -> val == false end)
              |> length() == 63
     end
   end
