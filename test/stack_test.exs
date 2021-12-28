@@ -7,9 +7,9 @@ defmodule ExChip8.StackTest do
     test "init/1 initializes stack list" do
       size = 100
 
-      {_, _, _, stack, _} = Stack.init({%Screen{}, nil, nil, %Stack{}, %Keyboard{}}, size)
+      {_, _, _, _, _} = Stack.init({%Screen{}, nil, nil, nil, %Keyboard{}}, size)
 
-      assert length(stack.stack) == size
+      assert :ets.info(:stack)[:size] == size
     end
   end
 
@@ -31,9 +31,9 @@ defmodule ExChip8.StackTest do
 
       assert Registers.lookup_register(:sp) == 0xFE
 
-      {stack, _} = Stack.stack_push({stack, registers}, 0x10)
+      {_, _} = Stack.stack_push({stack, registers}, 0x10)
 
-      assert Enum.at(stack.stack, 0xFE) == 0x10
+      assert 0x10 == Stack.lookup_stack(0xFE)
     end
 
     test "stack_push/2 raises when out of bounds", %{state: {_, _, registers, stack, _}} do
@@ -48,26 +48,23 @@ defmodule ExChip8.StackTest do
 
     test "stack_pop/2 returns value from top of stack", %{state: {_, _, registers, stack, _}} do
       Registers.insert_register(:sp, 0xFE)
-      updated_stack_list = List.replace_at(stack.stack, 0xFE - 1, 0x10)
-
-      updated_stack = Map.put(stack, :stack, updated_stack_list)
+      Stack.insert_stack(0xFE - 1, 0x10)
 
       assert Registers.lookup_register(:sp) == 0xFE
-      assert Enum.at(updated_stack.stack, Registers.lookup_register(:sp) - 1) == 0x10
 
-      assert {_stack, 0x10} = Stack.stack_pop({updated_stack, registers})
+      assert 0x10 == (Registers.lookup_register(:sp) - 1) |> Stack.lookup_stack()
+
+      assert {_stack, 0x10} = Stack.stack_pop({stack, registers})
     end
 
     test "stack_pop/2 decrements stack pointer", %{state: {_, _, registers, stack, _}} do
       Registers.insert_register(:sp, 0xFE)
-      updated_stack_list = List.replace_at(stack.stack, 0xFE, 0x10)
-
-      updated_stack = Map.put(stack, :stack, updated_stack_list)
+      Stack.insert_stack(0xFE, 0x10)
 
       assert Registers.lookup_register(:sp) == 0xFE
-      assert Enum.at(updated_stack.stack, Registers.lookup_register(:sp)) == 0x10
+      assert 0x10 == Registers.lookup_register(:sp) |> Stack.lookup_stack()
 
-      {_, _} = Stack.stack_pop({updated_stack, registers})
+      {_, _} = Stack.stack_pop({stack, registers})
 
       assert Registers.lookup_register(:sp) == 0xFD
     end
@@ -75,7 +72,7 @@ defmodule ExChip8.StackTest do
 
   defp initialize_array(_) do
     state =
-      {%Screen{}, nil, nil, %Stack{}, %Keyboard{}}
+      {%Screen{}, nil, nil, nil, %Keyboard{}}
       |> Registers.init(16)
       |> Stack.init(256)
 

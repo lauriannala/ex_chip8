@@ -5,6 +5,7 @@ defmodule ExChip8.StateServer do
   @v_register :v_register
   @registers :registers
   @memory :memory
+  @stack :stack
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, @default_state, name: __MODULE__)
@@ -29,6 +30,14 @@ defmodule ExChip8.StateServer do
     ])
 
     :ets.new(@memory, [
+      :set,
+      :named_table,
+      :public,
+      read_concurrency: false,
+      write_concurrency: false
+    ])
+
+    :ets.new(@stack, [
       :set,
       :named_table,
       :public,
@@ -79,5 +88,17 @@ defmodule ExChip8.StateServer do
   def handle_call({:memory_all_values}, _pid, @default_state) do
     values = :ets.tab2list(@memory)
     {:reply, values, @default_state}
+  end
+
+  @impl true
+  def handle_call({:lookup_stack, index}, _pid, @default_state) do
+    value = :ets.lookup(@stack, index)
+    {:reply, value, @default_state}
+  end
+
+  @impl true
+  def handle_call({:insert_stack, index, value}, _pid, @default_state) do
+    :ets.insert(@stack, {index, value})
+    {:reply, value, @default_state}
   end
 end

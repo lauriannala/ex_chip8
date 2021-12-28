@@ -2,13 +2,13 @@ defmodule ExChip8.MemoryTest do
   use ExChip8.StateCase
 
   alias ExChip8.Memory
-  alias ExChip8.{Screen, Memory, Stack, Keyboard}
+  alias ExChip8.{Screen, Memory, Keyboard}
 
   describe "Empty memory" do
     test "init/2 initializes memory list" do
       size = 200
 
-      {_, _, _, _, _} = Memory.init({%Screen{}, nil, nil, %Stack{}, %Keyboard{}}, size)
+      {_, _, _, _, _} = Memory.init({%Screen{}, nil, nil, nil, %Keyboard{}}, size)
 
       assert size == :ets.info(:memory)[:size]
     end
@@ -48,7 +48,7 @@ defmodule ExChip8.MemoryTest do
   defp initialize_array(_) do
     size = 200
 
-    {_, _, _, _, _} = Memory.init({%Screen{}, nil, nil, %Stack{}, %Keyboard{}}, size)
+    {_, _, _, _, _} = Memory.init({%Screen{}, nil, nil, nil, %Keyboard{}}, size)
 
     %{memory: nil}
   end

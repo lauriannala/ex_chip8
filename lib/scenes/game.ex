@@ -24,7 +24,7 @@ defmodule ExChip8.Scenes.Game do
     viewport = opts[:viewport]
 
     chip8 =
-      {%Screen{}, nil, nil, %Stack{}, %Keyboard{}}
+      {%Screen{}, nil, nil, nil, %Keyboard{}}
       |> ExChip8.create_state(@chip8_filename)
       |> ExChip8.init(@default_character_set)
       |> ExChip8.read_file_to_memory(@chip8_program_load_address)
