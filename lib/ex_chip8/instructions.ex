@@ -360,7 +360,7 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF0FF) == 0xE09E do
     x_value = Registers.lookup_v_register(x)
 
-    if ExChip8.Keyboard.keyboard_is_down(keyboard, x_value) do
+    if ExChip8.Keyboard.keyboard_is_down(x_value) do
       pc = Registers.lookup_register(:pc)
       Registers.insert_register(:pc, pc + 2)
     end
@@ -375,7 +375,7 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF0FF) == 0xE0A1 do
     x_value = Registers.lookup_v_register(x)
 
-    if not ExChip8.Keyboard.keyboard_is_down(keyboard, x_value) do
+    if not ExChip8.Keyboard.keyboard_is_down(x_value) do
       pc = Registers.lookup_register(:pc)
       Registers.insert_register(:pc, pc + 2)
     end

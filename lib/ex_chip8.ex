@@ -1,30 +1,7 @@
 defmodule ExChip8 do
-  @chip8_width Application.get_env(:ex_chip8, :chip8_width)
-  @chip8_height Application.get_env(:ex_chip8, :chip8_height)
-  @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
   @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
   @chip8_total_data_registers Application.get_env(:ex_chip8, :chip8_total_data_registers)
   @chip8_total_stack_depth Application.get_env(:ex_chip8, :chip8_total_stack_depth)
-  @chip8_total_keys Application.get_env(:ex_chip8, :chip8_total_keys)
-
-  @keyboard_map [
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F"
-  ]
 
   alias ExChip8.Registers
   alias ExChip8.Memory
@@ -37,8 +14,6 @@ defmodule ExChip8 do
       |> ExChip8.Memory.init(@chip8_memory_size)
       |> ExChip8.Registers.init(@chip8_total_data_registers)
       |> ExChip8.Stack.init(@chip8_total_stack_depth)
-      |> ExChip8.Keyboard.init(@chip8_total_keys)
-      |> ExChip8.Keyboard.keyboard_set_map(@keyboard_map)
 
     {:ok, state, String.to_charlist(filename)}
   end

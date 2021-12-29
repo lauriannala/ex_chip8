@@ -4,11 +4,31 @@ defmodule ExChip8.StateServer do
   @chip8_width Application.get_env(:ex_chip8, :chip8_width)
   @chip8_height Application.get_env(:ex_chip8, :chip8_height)
   @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
+  @chip8_total_keys Application.get_env(:ex_chip8, :chip8_total_keys)
   @default_state :ok
   @v_register :v_register
   @registers :registers
   @memory :memory
   @stack :stack
+
+  @keyboard_map [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F"
+  ]
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, @default_state, name: __MODULE__)
@@ -55,7 +75,11 @@ defmodule ExChip8.StateServer do
         chip8_width: @chip8_width
       )
 
-    state = %{screen: screen}
+    keyboard =
+      ExChip8.Keyboard.init(@chip8_total_keys)
+      |> ExChip8.Keyboard.keyboard_set_map(@keyboard_map)
+
+    state = %{screen: screen, keyboard: keyboard}
 
     {:ok, state}
   end
@@ -122,5 +146,15 @@ defmodule ExChip8.StateServer do
   @impl true
   def handle_call({:update_screen, screen}, _pid, state) do
     {:reply, screen, Map.replace!(state, :screen, screen)}
+  end
+
+  @impl true
+  def handle_call({:get_keyboard}, _pid, state) do
+    {:reply, state.keyboard, state}
+  end
+
+  @impl true
+  def handle_call({:update_keyboard, keyboard}, _pid, state) do
+    {:reply, keyboard, Map.replace!(state, :keyboard, keyboard)}
   end
 end

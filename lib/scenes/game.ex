@@ -24,7 +24,7 @@ defmodule ExChip8.Scenes.Game do
     viewport = opts[:viewport]
 
     chip8 =
-      {nil, nil, nil, nil, %Keyboard{}}
+      {nil, nil, nil, nil, nil}
       |> ExChip8.create_state(@chip8_filename)
       |> ExChip8.init(@default_character_set)
       |> ExChip8.read_file_to_memory(@chip8_program_load_address)
@@ -86,24 +86,20 @@ defmodule ExChip8.Scenes.Game do
   def handle_input(
         {:key, {pressed_key, :press, _}},
         _context,
-        %{
-          chip8: {screen, memory, registers, stack, keyboard}
-        } = state
+        state
       ) do
-    index = Keyboard.keyboard_map(keyboard, pressed_key)
+    index = Keyboard.keyboard_map(pressed_key)
 
     case index do
       false ->
         {:noreply, state}
 
       _ ->
-        updated_keyboard =
-          keyboard
-          |> Keyboard.keyboard_down(index)
-          |> Map.put(:pressed_key, pressed_key)
+        Keyboard.keyboard_down(index)
+        |> Map.put(:pressed_key, pressed_key)
+        |> Keyboard.update()
 
-        updated_chip8 = {screen, memory, registers, stack, updated_keyboard}
-        {:noreply, %{state | chip8: updated_chip8}}
+        {:noreply, state}
     end
   end
 
@@ -111,24 +107,20 @@ defmodule ExChip8.Scenes.Game do
   def handle_input(
         {:key, {pressed_key, :release, _}},
         _context,
-        %{
-          chip8: {screen, memory, registers, stack, keyboard}
-        } = state
+        state
       ) do
-    index = Keyboard.keyboard_map(keyboard, pressed_key)
+    index = Keyboard.keyboard_map(pressed_key)
 
     case index do
       false ->
         {:noreply, state}
 
       _ ->
-        updated_keyboard =
-          keyboard
-          |> Keyboard.keyboard_up(index)
-          |> Map.put(:pressed_key, pressed_key)
+        Keyboard.keyboard_up(index)
+        |> Map.put(:pressed_key, pressed_key)
+        |> Keyboard.update()
 
-        updated_chip8 = {screen, memory, registers, stack, updated_keyboard}
-        {:noreply, %{state | chip8: updated_chip8}}
+        {:noreply, state}
     end
   end
 

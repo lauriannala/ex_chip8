@@ -1,11 +1,20 @@
 defmodule ExChip8.Keyboard do
   alias ExChip8.Keyboard
+  alias ExChip8.StateServer
 
   defstruct keyboard: [],
             keyboard_map: [],
             pressed_key: false
 
-  def init({screen, memory, registers, stack, _}, k_size) do
+  def get_keyboard() do
+    GenServer.call(StateServer, {:get_keyboard})
+  end
+
+  def update(%Keyboard{} = keyboard) do
+    GenServer.call(StateServer, {:update_keyboard, keyboard})
+  end
+
+  def init(k_size) do
     keyboard = %Keyboard{
       keyboard:
         0..(k_size - 1)
@@ -14,21 +23,22 @@ defmodule ExChip8.Keyboard do
         |> Map.new()
     }
 
-    {screen, memory, registers, stack, keyboard}
+    keyboard
   end
 
-  def keyboard_set_map({screen, memory, registers, stack, keyboard}, map) do
+  def keyboard_set_map(keyboard, map) do
     keyboard_map =
       map
       |> Enum.with_index()
       |> Enum.map(fn {index, element} -> {index, element} end)
       |> Map.new()
 
-    updated_keyboard = Map.put(keyboard, :keyboard_map, keyboard_map)
-    {screen, memory, registers, stack, updated_keyboard}
+    Map.put(keyboard, :keyboard_map, keyboard_map)
   end
 
-  def keyboard_map(%Keyboard{} = keyboard, char) do
+  def keyboard_map(char) do
+    keyboard = get_keyboard()
+
     result =
       keyboard.keyboard_map
       |> Map.get(char, false)
@@ -39,17 +49,23 @@ defmodule ExChip8.Keyboard do
     end
   end
 
-  def keyboard_down(%Keyboard{} = keyboard, index) do
+  def keyboard_down(index) do
+    keyboard = get_keyboard()
+
     updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, true)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
 
-  def keyboard_up(%Keyboard{} = keyboard, index) do
+  def keyboard_up(index) do
+    keyboard = get_keyboard()
+
     updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, false)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
 
-  def keyboard_is_down(%Keyboard{} = keyboard, key) do
+  def keyboard_is_down(key) do
+    keyboard = get_keyboard()
+
     keyboard.keyboard |> Map.get(key, false)
   end
 end

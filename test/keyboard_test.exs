@@ -1,13 +1,13 @@
 defmodule ExChip8.KeyboardTest do
   use ExChip8.StateCase
 
-  alias ExChip8.{Screen, Keyboard}
+  alias ExChip8.Keyboard
 
   describe "Unitialized keyboard" do
     test "init/2 initializes keys" do
       size = 16
 
-      {_, _, _, _, keyboard} = Keyboard.init({%Screen{}, nil, nil, nil, %Keyboard{}}, size)
+      keyboard = Keyboard.init(size)
 
       assert length(keyboard.keyboard |> Map.keys()) == size
       assert Enum.all?(keyboard.keyboard |> Map.values(), &(&1 == false)) == true
@@ -17,9 +17,9 @@ defmodule ExChip8.KeyboardTest do
   describe "Keyboard operations" do
     setup [:initialize_keyboard]
 
-    test "keyboard_set_map/2 sets keyboard map", %{state: state} do
+    test "keyboard_set_map/2 sets keyboard map", _ do
       map = [?0, ?1, ?2]
-      {_, _, _, _, keyboard} = Keyboard.keyboard_set_map(state, map)
+      keyboard = Keyboard.get_keyboard() |> Keyboard.keyboard_set_map(map)
       assert keyboard.keyboard_map == %{?0 => 0, ?1 => 1, ?2 => 2}
     end
   end
@@ -27,65 +27,68 @@ defmodule ExChip8.KeyboardTest do
   describe "Keyboard operations with map" do
     setup [:initialize_keyboard_with_map]
 
-    test "keyboard_map/2 maps given key", %{keyboard: keyboard} do
-      assert Keyboard.keyboard_map(keyboard, ?0) == 0
-      assert Keyboard.keyboard_map(keyboard, ?1) == 1
-      assert Keyboard.keyboard_map(keyboard, ?2) == 2
+    test "keyboard_map/2 maps given key", _ do
+      assert Keyboard.keyboard_map(?0) == 0
+      assert Keyboard.keyboard_map(?1) == 1
+      assert Keyboard.keyboard_map(?2) == 2
     end
 
-    test "keyboard_map/2 returns false if key is not found", %{keyboard: keyboard} do
-      assert Keyboard.keyboard_map(keyboard, 16) == false
+    test "keyboard_map/2 returns false if key is not found", _ do
+      assert Keyboard.keyboard_map(16) == false
     end
 
-    test "keyboard_down/2 sets key down at index", %{keyboard: keyboard} do
-      keyboard = Keyboard.keyboard_down(keyboard, 0)
+    test "keyboard_down/2 sets key down at index", _ do
+      keyboard = Keyboard.keyboard_down(0)
 
       assert true == Map.get(keyboard.keyboard, 0)
 
-      keyboard = Keyboard.keyboard_down(keyboard, 1)
+      keyboard = Keyboard.keyboard_down(1)
 
       assert true == Map.get(keyboard.keyboard, 1)
       assert false == Map.get(keyboard.keyboard, 2)
     end
 
-    test "keyboard_down/2 sets key up at index", %{keyboard: keyboard} do
-      keyboard =
-        keyboard
-        |> Keyboard.keyboard_down(0)
-        |> Keyboard.keyboard_down(1)
-        |> Keyboard.keyboard_down(2)
+    test "keyboard_down/2 sets key up at index", _ do
+      Keyboard.keyboard_down(0) |> Keyboard.update()
+      Keyboard.keyboard_down(1) |> Keyboard.update()
+      Keyboard.keyboard_down(2) |> Keyboard.update()
 
-      keyboard = Keyboard.keyboard_up(keyboard, 0)
+      Keyboard.keyboard_up(0) |> Keyboard.update()
+
+      keyboard = Keyboard.get_keyboard()
 
       assert false == Map.get(keyboard.keyboard, 0)
 
-      keyboard = Keyboard.keyboard_up(keyboard, 1)
+      Keyboard.keyboard_up(1) |> Keyboard.update()
+
+      keyboard = Keyboard.get_keyboard()
 
       assert false == Map.get(keyboard.keyboard, 1)
       assert true == Map.get(keyboard.keyboard, 2)
     end
 
-    test "keyboard_is_down checks if key is pressed on given index", %{keyboard: keyboard} do
-      keyboard = Keyboard.keyboard_down(keyboard, 1)
+    test "keyboard_is_down checks if key is pressed on given index", _ do
+      Keyboard.keyboard_down(1)
+      |> Keyboard.update()
 
-      assert Keyboard.keyboard_is_down(keyboard, 0) == false
-      assert Keyboard.keyboard_is_down(keyboard, 1) == true
-      assert Keyboard.keyboard_is_down(keyboard, 2) == false
+      assert false == Keyboard.keyboard_is_down(0)
+      assert true == Keyboard.keyboard_is_down(1)
+      assert false == Keyboard.keyboard_is_down(2)
     end
   end
 
   defp initialize_keyboard(_) do
-    {_, _, _, _, keyboard} = state = Keyboard.init({%Screen{}, nil, nil, nil, %Keyboard{}}, 16)
+    Keyboard.init(16)
+    |> Keyboard.update()
 
-    %{keyboard: keyboard, state: state}
+    %{keyboard: Keyboard.get_keyboard()}
   end
 
   defp initialize_keyboard_with_map(_) do
-    {_, _, _, _, keyboard} =
-      {%Screen{}, nil, nil, nil, %Keyboard{}}
-      |> Keyboard.init(16)
-      |> Keyboard.keyboard_set_map([?0, ?1, ?2])
+    Keyboard.init(16)
+    |> Keyboard.keyboard_set_map([?0, ?1, ?2])
+    |> Keyboard.update()
 
-    %{keyboard: keyboard}
+    %{keyboard: Keyboard.get_keyboard()}
   end
 end
