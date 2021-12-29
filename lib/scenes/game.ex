@@ -53,7 +53,12 @@ defmodule ExChip8.Scenes.Game do
     pc = Registers.lookup_register(:pc)
     Registers.insert_register(:pc, pc + 2)
 
-    ExChip8.Instructions.exec(opcode)
+    executed = ExChip8.Instructions.exec(opcode)
+
+    if executed == :wait_for_key_press do
+      # Rewind program counter if waiting for key press.
+      Registers.insert_register(:pc, pc)
+    end
 
     graph =
       state.graph

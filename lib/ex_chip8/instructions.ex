@@ -18,7 +18,7 @@ defmodule ExChip8.Instructions do
   @doc """
   Execute instruction associated with opcode.
   """
-  @spec exec(integer) :: :ok
+  @spec exec(integer) :: :ok | :wait_for_key_press
   def exec(opcode) do
     nnn = opcode &&& 0x0FFF
     x = opcode >>> 8 &&& 0x000F
@@ -26,15 +26,16 @@ defmodule ExChip8.Instructions do
     kk = opcode &&& 0x00FF
     n = opcode &&& 0x000F
 
-    _exec(opcode, %{
-      nnn: nnn,
-      x: x,
-      y: y,
-      kk: kk,
-      n: n
-    })
-
-    :ok
+    case _exec(opcode, %{
+           nnn: nnn,
+           x: x,
+           y: y,
+           kk: kk,
+           n: n
+         }) do
+      :wait_for_key_press -> :wait_for_key_press
+      _ -> :ok
+    end
   end
 
   # CLS - Clear the display.
