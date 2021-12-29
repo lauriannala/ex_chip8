@@ -1,30 +1,41 @@
 defmodule ExChip8.Memory do
-  alias ExChip8.Memory
+  alias ExChip8.StateServer
   import Bitwise
 
-  defstruct memory: []
-
-  def init({sreen, _, registers, stack, keyboard}, size) do
-    memory = %Memory{
-      memory: 0..(size - 1) |> Enum.map(fn _ -> 0x00 end)
-    }
-
-    {sreen, memory, registers, stack, keyboard}
+  def init(size) do
+    0..(size - 1)
+    |> Enum.each(fn index ->
+      insert_memory(index, 0x00)
+    end)
   end
 
-  def memory_set(%Memory{} = memory, index, value) do
-    set = List.replace_at(memory.memory, index, value)
-    Map.put(memory, :memory, set)
+  def initialize_memory(values) do
+    values
+    |> Enum.with_index()
+    |> Enum.each(fn {value, index} ->
+      insert_memory(index, value)
+    end)
   end
 
-  def memory_get(%Memory{} = memory, index) do
-    Enum.at(memory.memory, index)
-  end
-
-  def memory_get_short(%Memory{} = memory, index) do
-    byte1 = memory_get(memory, index)
-    byte2 = memory_get(memory, index + 1)
+  def memory_get_short(index) do
+    byte1 = lookup_memory(index)
+    byte2 = lookup_memory(index + 1)
 
     byte1 <<< 8 ||| byte2
+  end
+
+  def insert_memory(at, value) when is_integer(at) and is_integer(value) do
+    GenServer.call(StateServer, {:insert_memory, at, value})
+  end
+
+  def lookup_memory(at) when is_integer(at) do
+    [{^at, value}] = GenServer.call(StateServer, {:lookup_memory, at})
+    value
+  end
+
+  def memory_all_values() do
+    GenServer.call(StateServer, {:memory_all_values})
+    |> Enum.sort_by(fn {index, _} -> index end)
+    |> Enum.map(fn {_index, value} -> value end)
   end
 end

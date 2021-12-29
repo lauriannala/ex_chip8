@@ -1,5 +1,6 @@
 defmodule ExChip8.Screen do
   alias ExChip8.Screen
+  alias ExChip8.StateServer
 
   defstruct sleep_wait_period: 0,
             chip8_height: 0,
@@ -12,8 +13,15 @@ defmodule ExChip8.Screen do
 
   require Logger
 
+  def get_screen() do
+    GenServer.call(StateServer, {:get_screen})
+  end
+
+  def update(%Screen{} = screen) do
+    GenServer.call(StateServer, {:update_screen, screen})
+  end
+
   def init_state(
-        {_, memory, registers, stack, keyboard},
         sleep_wait_period: sleep_wait_period,
         chip8_height: chip8_height,
         chip8_width: chip8_width
@@ -24,19 +32,28 @@ defmodule ExChip8.Screen do
       chip8_width: chip8_width,
       pixels:
         0..(chip8_height - 1)
-        |> Enum.map(fn _ ->
-          0..(chip8_width - 1) |> Enum.map(fn _ -> false end)
+        |> Enum.with_index()
+        |> Enum.map(fn {index, _element} ->
+          cols =
+            0..(chip8_width - 1)
+            |> Enum.with_index()
+            |> Enum.map(fn {index, _element} -> {index, false} end)
+            |> Map.new()
+
+          {index, cols}
         end)
+        |> Map.new()
     }
 
-    {screen, memory, registers, stack, keyboard}
+    screen
   end
 
   def screen_set(%Screen{} = screen, x, y) do
-    row = Enum.at(screen.pixels, y)
-    updated_row = List.replace_at(row, x, true)
+    %{^y => row} = screen.pixels
 
-    updated_pixels = List.replace_at(screen.pixels, y, updated_row)
+    updated_row = row |> Map.replace!(x, true)
+
+    updated_pixels = screen.pixels |> Map.replace!(y, updated_row)
 
     Map.put(screen, :pixels, updated_pixels)
   end
@@ -58,46 +75,43 @@ defmodule ExChip8.Screen do
     changeset
     |> Enum.reduce(screen, fn {x, y}, updated_screen ->
       screen_unset(updated_screen, x, y)
+      |> update()
     end)
   end
 
   def screen_unset(%Screen{} = screen, x, y) do
-    row = Enum.at(screen.pixels, y)
-    updated_row = List.replace_at(row, x, false)
+    %{^y => row} = screen.pixels
 
-    updated_pixels = List.replace_at(screen.pixels, y, updated_row)
+    updated_row = row |> Map.replace!(x, false)
+
+    updated_pixels = screen.pixels |> Map.replace!(y, updated_row)
 
     Map.put(screen, :pixels, updated_pixels)
   end
 
   def screen_is_set?(%Screen{} = screen, x, y) do
-    row = Enum.at(screen.pixels, y)
-    if row == nil, do: raise("x: #{x} is out of bounds.")
+    %{^y => row} = screen.pixels
 
-    col = Enum.at(row, x)
-    if col == nil, do: raise("y: #{y} is out of bounds.")
+    %{^x => col} = row
 
     col
   end
 
-  def screen_draw_sprite(
-        %{
-          screen: %Screen{} = screen
-        } = attrs
-      ) do
-    changeset = screen_draw_sprite_changeset(attrs)
+  def screen_draw_sprite(%Screen{} = screen, attrs) do
+    changeset = screen_draw_sprite_changeset(screen, attrs)
 
-    screen =
-      changeset
-      |> Enum.reduce(screen, fn c, updated_screen ->
-        {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
+    changeset
+    |> Enum.reduce(screen, fn c, updated_screen ->
+      {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
 
-        if pixel do
-          screen_set(updated_screen, x, y)
-        else
-          screen_unset(updated_screen, x, y)
-        end
-      end)
+      if pixel do
+        screen_set(updated_screen, x, y)
+        |> update()
+      else
+        screen_unset(updated_screen, x, y)
+        |> update()
+      end
+    end)
 
     collision =
       changeset
@@ -105,19 +119,17 @@ defmodule ExChip8.Screen do
         collision == true
       end)
 
-    %{collision: collision, screen: screen}
+    %{collision: collision}
   end
 
-  def screen_draw_sprite_changeset(%{
-        screen: %Screen{} = screen,
+  def screen_draw_sprite_changeset(%Screen{} = screen, %{
         x: x,
         y: y,
-        memory: %Memory{} = memory,
         sprite_index: sprite_index,
         num: num
       }) do
     sprite_bytes =
-      memory.memory
+      Memory.memory_all_values()
       |> Enum.drop(sprite_index)
       |> Enum.take(num)
 
@@ -127,7 +139,7 @@ defmodule ExChip8.Screen do
         char = Enum.at(sprite_bytes, ly)
 
         y_target = rem(ly + y, screen.chip8_height)
-        row = Enum.at(screen.pixels, y_target)
+        %{^y_target => row} = screen.pixels
 
         0..(8 - 1)
         |> Enum.map(fn lx ->
@@ -135,7 +147,8 @@ defmodule ExChip8.Screen do
             {:skip, %{}}
           else
             x_target = rem(lx + x, screen.chip8_width)
-            pixel = Enum.at(row, x_target)
+
+            %{^x_target => pixel} = row
 
             {:update,
              %{
@@ -153,29 +166,5 @@ defmodule ExChip8.Screen do
     changeset
     |> List.flatten()
     |> Enum.filter(fn {status, _} -> status == :update end)
-  end
-
-  def apply_delay({screen, memory, registers, stack, keyboard} = state) do
-    if registers.delay_timer == 0 do
-      state
-    else
-      updated_registers =
-        registers
-        |> Map.update!(:delay_timer, fn t -> t - 1 end)
-
-      {screen, memory, updated_registers, stack, keyboard}
-    end
-  end
-
-  def apply_sound({screen, memory, registers, stack, keyboard} = state) do
-    if registers.sound_timer == 0 do
-      state
-    else
-      updated_registers =
-        registers
-        |> Map.update!(:sound_timer, fn t -> t - 1 end)
-
-      {screen, memory, updated_registers, stack, keyboard}
-    end
   end
 end

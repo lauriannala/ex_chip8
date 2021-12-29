@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :ex_chip8, :filename, "TETRIS"
 width = 64
@@ -111,3 +111,5 @@ config :ex_chip8, :chip8_default_character_set, [
   0x80,
   0x80
 ]
+
+config :ex_chip8, :env, config_env()

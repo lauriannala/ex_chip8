@@ -1,59 +1,37 @@
 defmodule ExChip8.ScreenTest do
-  use ExUnit.Case
+  use ExChip8.StateCase
 
   alias ExChip8.Screen
-  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
+  alias ExChip8.Screen
 
   @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
 
-  describe "Unitialized screen" do
-    test "init_state/2 initializes correctly" do
-      {screen, _, _, _, _} =
-        Screen.init_state(
-          {%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}},
-          sleep_wait_period: 5,
-          chip8_height: 32,
-          chip8_width: 64
-        )
-
-      assert screen.sleep_wait_period == 5
-      assert screen.chip8_height == 32
-      assert screen.chip8_width == 64
-
-      assert Enum.at(screen.pixels, 0) ==
-               Enum.map(1..64, fn _ -> false end)
-
-      assert Enum.at(screen.pixels, 31) ==
-               Enum.map(1..64, fn _ -> false end)
-    end
-  end
-
   describe "Initialized screen" do
     setup [:initialize]
 
-    test "screen_is_set?/3 return correct status", %{state: {screen, _, _, _, _}} do
+    test "screen_is_set?/3 return correct status", %{screen: screen} do
       assert Screen.screen_is_set?(screen, 0, 0) == false
       assert Screen.screen_is_set?(screen, 63, 31) == false
     end
 
-    test "screen_is_set?/3 raises when out of bounds", %{state: {screen, _, _, _, _}} do
-      assert_raise RuntimeError, fn ->
+    test "screen_is_set?/3 raises when out of bounds", %{screen: screen} do
+      assert_raise MatchError, fn ->
         Screen.screen_is_set?(screen, 64, 0)
       end
 
-      assert_raise RuntimeError, fn ->
+      assert_raise MatchError, fn ->
         Screen.screen_is_set?(screen, 0, 32)
       end
     end
 
-    test "screen_set/3 updates pixel correctly", %{state: {screen, _, _, _, _}} do
-      updated_screen = Screen.screen_set(screen, 10, 15)
+    test "screen_set/3 updates pixel correctly", %{screen: screen} do
+      updated_screen = Screen.screen_set(screen, 10, 15) |> Screen.update()
 
-      row = Enum.at(updated_screen.pixels, 15)
-      assert Enum.at(row, 10) == true
+      row = Map.get(updated_screen.pixels, 15)
+      assert Map.get(row, 10) == true
 
-      assert Enum.filter(row, fn val -> val == false end)
+      assert Enum.filter(row, fn {_index, val} -> val == false end)
              |> length() == 63
     end
   end
@@ -61,15 +39,12 @@ defmodule ExChip8.ScreenTest do
   describe "Initialized screen with memory" do
     setup [:initialize_with_memory]
 
-    test "screen_draw_sprite_changeset/1 sets changes correctly", %{
-      state: {screen, memory, _, _, _}
-    } do
+    test "screen_draw_sprite_changeset/1 sets changes correctly", %{screen: screen} do
       result =
-        Screen.screen_draw_sprite_changeset(%{
-          screen: screen,
+        screen
+        |> Screen.screen_draw_sprite_changeset(%{
           x: 32,
           y: 30,
-          memory: memory,
           sprite_index: 0x00,
           num: 1
         })
@@ -82,45 +57,42 @@ defmodule ExChip8.ScreenTest do
              ]
     end
 
-    test "screen_draw_sprite_changeset/1 sets collision correctly", %{
-      state: {screen, memory, _, _, _}
-    } do
-      screen_has_pixels =
-        screen
-        |> Screen.screen_set(0, 0)
-        |> Screen.screen_set(1, 0)
+    test "screen_draw_sprite_changeset/1 sets collision correctly", %{screen: screen} do
+      screen
+      |> Screen.screen_set(0, 0)
+      |> Screen.screen_set(1, 0)
+      |> Screen.update()
 
       result =
-        Screen.screen_draw_sprite_changeset(%{
-          screen: screen_has_pixels,
+        Screen.get_screen()
+        |> Screen.screen_draw_sprite_changeset(%{
           x: 0,
           y: 0,
-          memory: memory,
           sprite_index: 0x00,
           num: 1
         })
 
-      assert result == [
+      assert [
                update: %{collision: true, pixel: false, x: 0, y: 0},
                update: %{collision: true, pixel: false, x: 1, y: 0},
                update: %{collision: false, pixel: true, x: 2, y: 0},
                update: %{collision: false, pixel: true, x: 3, y: 0}
-             ]
+             ] = result
     end
 
-    test "screen_draw_sprite/1 applies changesets to state", %{state: {screen, memory, _, _, _}} do
+    test "screen_draw_sprite/1 applies changesets to state", %{screen: screen} do
       %{
-        collision: collision,
-        screen: screen
+        collision: collision
       } =
-        Screen.screen_draw_sprite(%{
-          screen: screen,
+        screen
+        |> Screen.screen_draw_sprite(%{
           x: 32,
           y: 30,
-          memory: memory,
           sprite_index: 0x00,
           num: 1
         })
+
+      screen = Screen.get_screen()
 
       assert collision == false
       assert Screen.screen_is_set?(screen, 32, 30) == true
@@ -129,28 +101,28 @@ defmodule ExChip8.ScreenTest do
       assert Screen.screen_is_set?(screen, 35, 30) == true
     end
 
-    test "screen_draw_sprite/1 applies changesets to state with collision", %{
-      state: {screen, memory, _, _, _}
-    } do
-      screen_has_pixels =
-        screen
-        |> Screen.screen_set(0, 0)
-        |> Screen.screen_set(1, 0)
+    test "screen_draw_sprite/1 applies changesets to state with collision", %{screen: screen} do
+      screen
+      |> Screen.screen_set(0, 0)
+      |> Screen.screen_set(1, 0)
+      |> Screen.update()
+
+      screen = Screen.get_screen()
 
       %{
-        collision: collision,
-        screen: screen
+        collision: collision
       } =
-        Screen.screen_draw_sprite(%{
-          screen: screen_has_pixels,
+        screen
+        |> Screen.screen_draw_sprite(%{
           x: 0,
           y: 0,
-          memory: memory,
           sprite_index: 0x00,
           num: 1
         })
 
-      assert collision == true
+      screen = Screen.get_screen()
+
+      assert true = collision
       assert Screen.screen_is_set?(screen, 0, 0) == false
       assert Screen.screen_is_set?(screen, 1, 0) == false
       assert Screen.screen_is_set?(screen, 2, 0) == true
@@ -159,28 +131,23 @@ defmodule ExChip8.ScreenTest do
   end
 
   defp initialize(_) do
-    state =
-      Screen.init_state(
-        {%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}},
-        sleep_wait_period: 5,
-        chip8_height: 32,
-        chip8_width: 64
-      )
+    Screen.init_state(
+      sleep_wait_period: 5,
+      chip8_height: 32,
+      chip8_width: 64
+    )
 
-    %{state: state}
+    %{screen: Screen.get_screen()}
   end
 
   defp initialize_with_memory(_) do
-    %{state: state} = initialize(%{})
+    initialize(%{})
 
-    state =
-      state
-      |> ExChip8.Memory.init(@chip8_memory_size)
+    ExChip8.Memory.init(@chip8_memory_size)
 
-    {:ok, state, _} =
-      {:ok, state, "filename"}
-      |> ExChip8.init(@default_character_set)
+    {:ok, "filename"}
+    |> ExChip8.init(@default_character_set)
 
-    %{state: state}
+    %{screen: Screen.get_screen()}
   end
 end

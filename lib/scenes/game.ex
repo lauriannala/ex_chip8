@@ -1,8 +1,9 @@
 defmodule ExChip8.Scenes.Game do
   use Scenic.Scene
   alias Scenic.Graph
-  alias ExChip8.{Screen, Memory, Registers, Stack, Keyboard}
+  alias ExChip8.{Screen, Registers, Keyboard}
   import Scenic.Primitives, only: [rectangle: 3]
+  import ExChip8.Registers
   import ExChip8.Screen
 
   @chip8_tile_size Application.get_env(:ex_chip8, :chip8_tile_size)
@@ -23,11 +24,9 @@ defmodule ExChip8.Scenes.Game do
   def init(_, opts) do
     viewport = opts[:viewport]
 
-    chip8 =
-      {%Screen{}, %Memory{}, %Registers{}, %Stack{}, %Keyboard{}}
-      |> ExChip8.create_state(@chip8_filename)
-      |> ExChip8.init(@default_character_set)
-      |> ExChip8.read_file_to_memory(@chip8_program_load_address)
+    ExChip8.create_state(@chip8_filename)
+    |> ExChip8.init(@default_character_set)
+    |> ExChip8.read_file_to_memory(@chip8_program_load_address)
 
     {:ok, timer} = :timer.send_interval(@sleep_wait_period, :frame)
 
@@ -38,8 +37,7 @@ defmodule ExChip8.Scenes.Game do
       graph: @graph,
       frame_count: 1,
       frame_timer: timer,
-      opcode: 0x0000,
-      chip8: chip8
+      opcode: 0x0000
     }
 
     {:ok, state, push: state.graph}
@@ -48,63 +46,44 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_info(
         :frame,
-        %{frame_count: frame_count, chip8: {screen, memory, registers, stack, keyboard} = chip8} =
-          state
+        %{frame_count: frame_count} = state
       ) do
-    opcode = ExChip8.Memory.memory_get_short(memory, registers.pc)
+    opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
-    updated_registers =
-      registers
-      |> Map.update!(:pc, fn counter -> counter + 2 end)
+    pc = Registers.lookup_register(:pc)
+    Registers.insert_register(:pc, pc + 2)
 
-    next_cycle =
-      {screen, memory, updated_registers, stack, keyboard}
-      |> ExChip8.Instructions.exec(opcode)
-
-    updated_chip8 =
-      case next_cycle do
-        :wait_for_key_press ->
-          chip8
-
-        _ ->
-          next_cycle
-      end
+    ExChip8.Instructions.exec(opcode)
 
     graph =
       state.graph
-      |> draw_chip8(updated_chip8)
+      |> draw_chip8()
 
-    updated_chip8 =
-      updated_chip8
-      |> apply_delay()
-      |> apply_sound()
+    apply_delay()
+    apply_sound()
 
-    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode, chip8: updated_chip8},
-     push: graph}
+    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode}, push: graph}
   end
 
   @impl true
   def handle_input(
         {:key, {pressed_key, :press, _}},
         _context,
-        %{
-          chip8: {screen, memory, registers, stack, keyboard}
-        } = state
+        state
       ) do
-    index = Keyboard.keyboard_map(keyboard, pressed_key)
+    index = Keyboard.keyboard_map(Keyboard.get_keyboard(), pressed_key)
 
     case index do
       false ->
         {:noreply, state}
 
       _ ->
-        updated_keyboard =
-          keyboard
-          |> Keyboard.keyboard_down(index)
-          |> Map.put(:pressed_key, pressed_key)
+        Keyboard.get_keyboard()
+        |> Keyboard.keyboard_down(index)
+        |> Map.put(:pressed_key, pressed_key)
+        |> Keyboard.update()
 
-        updated_chip8 = {screen, memory, registers, stack, updated_keyboard}
-        {:noreply, %{state | chip8: updated_chip8}}
+        {:noreply, state}
     end
   end
 
@@ -112,35 +91,33 @@ defmodule ExChip8.Scenes.Game do
   def handle_input(
         {:key, {pressed_key, :release, _}},
         _context,
-        %{
-          chip8: {screen, memory, registers, stack, keyboard}
-        } = state
+        state
       ) do
-    index = Keyboard.keyboard_map(keyboard, pressed_key)
+    index = Keyboard.keyboard_map(Keyboard.get_keyboard(), pressed_key)
 
     case index do
       false ->
         {:noreply, state}
 
       _ ->
-        updated_keyboard =
-          keyboard
-          |> Keyboard.keyboard_up(index)
-          |> Map.put(:pressed_key, pressed_key)
+        Keyboard.get_keyboard()
+        |> Keyboard.keyboard_up(index)
+        |> Map.put(:pressed_key, pressed_key)
+        |> Keyboard.update()
 
-        updated_chip8 = {screen, memory, registers, stack, updated_keyboard}
-        {:noreply, %{state | chip8: updated_chip8}}
+        {:noreply, state}
     end
   end
 
   @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
-  defp draw_chip8(
-         graph,
-         {%Screen{chip8_height: chip8_height, chip8_width: chip8_width} = screen, _memory,
-          _registers, _stack, _keyboard}
-       ) do
+  defp draw_chip8(graph) do
+    %Screen{
+      chip8_height: chip8_height,
+      chip8_width: chip8_width
+    } = screen = Screen.get_screen()
+
     changes =
       0..(chip8_height - 1)
       |> Enum.map(fn y ->

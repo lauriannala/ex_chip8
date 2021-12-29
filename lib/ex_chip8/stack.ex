@@ -1,31 +1,39 @@
 defmodule ExChip8.Stack do
-  alias ExChip8.Stack
+  alias ExChip8.Registers
+  alias ExChip8.StateServer
 
-  defstruct stack: []
-
-  def init({screen, memory, registers, _, keyboard}, size) do
-    stack = %Stack{
-      stack: 0..(size - 1) |> Enum.map(fn _ -> 0x00 end)
-    }
-
-    {screen, memory, registers, stack, keyboard}
+  def init(size) do
+    0..(size - 1)
+    |> Enum.with_index()
+    |> Enum.each(fn {_, index} ->
+      insert_stack(index, 0x00)
+    end)
   end
 
-  def stack_push({stack, registers}, value) do
-    if registers.sp + 1 >= length(stack.stack),
+  def insert_stack(index, value) when is_integer(index) and is_integer(value) do
+    GenServer.call(StateServer, {:insert_stack, index, value})
+  end
+
+  def lookup_stack(index) when is_integer(index) do
+    [{^index, value}] = GenServer.call(StateServer, {:lookup_stack, index})
+    value
+  end
+
+  def stack_push(value) do
+    sp = Registers.lookup_register(:sp)
+
+    if sp + 1 >= :ets.info(:stack)[:size],
       do: raise("Stack pointer out of bounds.")
 
-    updated_stack_list = List.replace_at(stack.stack, registers.sp, value)
+    insert_stack(sp, value)
 
-    updated_stack = Map.put(stack, :stack, updated_stack_list)
-
-    registers = Map.update!(registers, :sp, fn stack_pointer -> stack_pointer + 1 end)
-    {updated_stack, registers}
+    Registers.insert_register(:sp, sp + 1)
   end
 
-  def stack_pop({stack, registers}) do
-    registers = Map.update!(registers, :sp, fn stack_pointer -> stack_pointer - 1 end)
+  def stack_pop() do
+    sp = Registers.lookup_register(:sp)
+    Registers.insert_register(:sp, sp - 1)
 
-    {registers, Enum.at(stack.stack, registers.sp)}
+    Registers.lookup_register(:sp) |> lookup_stack()
   end
 end
