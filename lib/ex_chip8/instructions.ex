@@ -1,7 +1,5 @@
 defmodule ExChip8.Instructions do
-  alias ExChip8.Screen
-  alias ExChip8.Stack
-  alias ExChip8.Registers
+  alias ExChip8.{Screen, Stack, Registers, Keyboard, Memory}
 
   import Bitwise
 
@@ -307,7 +305,7 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF0FF) == 0xE09E do
     x_value = Registers.lookup_v_register(x)
 
-    if ExChip8.Keyboard.get_keyboard() |> ExChip8.Keyboard.keyboard_is_down(x_value) do
+    if Keyboard.get_keyboard() |> Keyboard.keyboard_is_down(x_value) do
       pc = Registers.lookup_register(:pc)
       Registers.insert_register(:pc, pc + 2)
     end
@@ -320,7 +318,7 @@ defmodule ExChip8.Instructions do
        when (opcode &&& 0xF0FF) == 0xE0A1 do
     x_value = Registers.lookup_v_register(x)
 
-    if not (ExChip8.Keyboard.get_keyboard() |> ExChip8.Keyboard.keyboard_is_down(x_value)) do
+    if not (Keyboard.get_keyboard() |> Keyboard.keyboard_is_down(x_value)) do
       pc = Registers.lookup_register(:pc)
       Registers.insert_register(:pc, pc + 2)
     end
@@ -341,10 +339,10 @@ defmodule ExChip8.Instructions do
          x: x
        })
        when (opcode &&& 0xF0FF) == 0xF00A do
-    keyboard = ExChip8.Keyboard.get_keyboard()
+    keyboard = Keyboard.get_keyboard()
 
     pressed_key = keyboard.pressed_key
-    pressed_key_index = ExChip8.Keyboard.keyboard_map(keyboard, pressed_key)
+    pressed_key_index = Keyboard.keyboard_map(keyboard, pressed_key)
 
     case pressed_key_index do
       false ->
@@ -409,9 +407,9 @@ defmodule ExChip8.Instructions do
 
     i_value = Registers.lookup_register(:i)
 
-    ExChip8.Memory.insert_memory(i_value, hundreds)
-    ExChip8.Memory.insert_memory(i_value + 1, tens)
-    ExChip8.Memory.insert_memory(i_value + 2, units)
+    Memory.insert_memory(i_value, hundreds)
+    Memory.insert_memory(i_value + 1, tens)
+    Memory.insert_memory(i_value + 2, units)
   end
 
   # LD [I], Vx - Fx55
@@ -424,7 +422,7 @@ defmodule ExChip8.Instructions do
       vi = Registers.lookup_v_register(i)
 
       (Registers.lookup_register(:i) + i)
-      |> ExChip8.Memory.insert_memory(vi)
+      |> Memory.insert_memory(vi)
     end)
   end
 
@@ -436,7 +434,7 @@ defmodule ExChip8.Instructions do
     0..(x - 1)
     |> Enum.each(fn i ->
       i_value = Registers.lookup_register(:i)
-      value_from_memory = ExChip8.Memory.lookup_memory(i_value + 1)
+      value_from_memory = Memory.lookup_memory(i_value + 1)
 
       Registers.insert_v_register(i, value_from_memory)
     end)
