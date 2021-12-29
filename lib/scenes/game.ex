@@ -3,6 +3,7 @@ defmodule ExChip8.Scenes.Game do
   alias Scenic.Graph
   alias ExChip8.{Screen, Registers, Keyboard}
   import Scenic.Primitives, only: [rectangle: 3]
+  import ExChip8.Registers
   import ExChip8.Screen
 
   @chip8_tile_size Application.get_env(:ex_chip8, :chip8_tile_size)

@@ -289,7 +289,8 @@ defmodule ExChip8.Instructions do
     sprite_index = Registers.lookup_register(:i)
 
     %{collision: updated_vf} =
-      Screen.screen_draw_sprite(%{
+      Screen.get_screen()
+      |> Screen.screen_draw_sprite(%{
         x: Registers.lookup_v_register(x),
         y: Registers.lookup_v_register(y),
         sprite_index: sprite_index,

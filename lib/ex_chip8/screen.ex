@@ -8,7 +8,6 @@ defmodule ExChip8.Screen do
             pixels: []
 
   alias ExChip8.Memory
-  alias ExChip8.Registers
 
   import Bitwise
 
@@ -98,10 +97,8 @@ defmodule ExChip8.Screen do
     col
   end
 
-  def screen_draw_sprite(attrs) do
-    changeset = screen_draw_sprite_changeset(attrs)
-
-    screen = get_screen()
+  def screen_draw_sprite(%Screen{} = screen, attrs) do
+    changeset = screen_draw_sprite_changeset(screen, attrs)
 
     changeset
     |> Enum.reduce(screen, fn c, updated_screen ->
@@ -125,14 +122,12 @@ defmodule ExChip8.Screen do
     %{collision: collision}
   end
 
-  def screen_draw_sprite_changeset(%{
+  def screen_draw_sprite_changeset(%Screen{} = screen, %{
         x: x,
         y: y,
         sprite_index: sprite_index,
         num: num
       }) do
-    screen = get_screen()
-
     sprite_bytes =
       Memory.memory_all_values()
       |> Enum.drop(sprite_index)
@@ -171,21 +166,5 @@ defmodule ExChip8.Screen do
     changeset
     |> List.flatten()
     |> Enum.filter(fn {status, _} -> status == :update end)
-  end
-
-  def apply_delay() do
-    delay_timer = Registers.lookup_register(:delay_timer)
-
-    if delay_timer != 0 do
-      Registers.insert_register(:delay_timer, delay_timer - 1)
-    end
-  end
-
-  def apply_sound() do
-    sound_timer = Registers.lookup_register(:sound_timer)
-
-    if sound_timer != 0 do
-      Registers.insert_register(:sound_timer, sound_timer - 1)
-    end
   end
 end

@@ -39,9 +39,10 @@ defmodule ExChip8.ScreenTest do
   describe "Initialized screen with memory" do
     setup [:initialize_with_memory]
 
-    test "screen_draw_sprite_changeset/1 sets changes correctly", _ do
+    test "screen_draw_sprite_changeset/1 sets changes correctly", %{screen: screen} do
       result =
-        Screen.screen_draw_sprite_changeset(%{
+        screen
+        |> Screen.screen_draw_sprite_changeset(%{
           x: 32,
           y: 30,
           sprite_index: 0x00,
@@ -63,7 +64,8 @@ defmodule ExChip8.ScreenTest do
       |> Screen.update()
 
       result =
-        Screen.screen_draw_sprite_changeset(%{
+        Screen.get_screen()
+        |> Screen.screen_draw_sprite_changeset(%{
           x: 0,
           y: 0,
           sprite_index: 0x00,
@@ -78,11 +80,12 @@ defmodule ExChip8.ScreenTest do
              ] = result
     end
 
-    test "screen_draw_sprite/1 applies changesets to state", _ do
+    test "screen_draw_sprite/1 applies changesets to state", %{screen: screen} do
       %{
         collision: collision
       } =
-        Screen.screen_draw_sprite(%{
+        screen
+        |> Screen.screen_draw_sprite(%{
           x: 32,
           y: 30,
           sprite_index: 0x00,
@@ -104,10 +107,13 @@ defmodule ExChip8.ScreenTest do
       |> Screen.screen_set(1, 0)
       |> Screen.update()
 
+      screen = Screen.get_screen()
+
       %{
         collision: collision
       } =
-        Screen.screen_draw_sprite(%{
+        screen
+        |> Screen.screen_draw_sprite(%{
           x: 0,
           y: 0,
           sprite_index: 0x00,

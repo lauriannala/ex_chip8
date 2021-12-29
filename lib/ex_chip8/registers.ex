@@ -31,4 +31,20 @@ defmodule ExChip8.Registers do
   def insert_register(register, value) when is_atom(register) do
     GenServer.call(StateServer, {:insert_register, register, value})
   end
+
+  def apply_delay() do
+    delay_timer = lookup_register(:delay_timer)
+
+    if delay_timer != 0 do
+      insert_register(:delay_timer, delay_timer - 1)
+    end
+  end
+
+  def apply_sound() do
+    sound_timer = lookup_register(:sound_timer)
+
+    if sound_timer != 0 do
+      insert_register(:sound_timer, sound_timer - 1)
+    end
+  end
 end
