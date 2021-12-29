@@ -2,6 +2,10 @@ defmodule ExChip8.Screen do
   alias ExChip8.Screen
   alias ExChip8.StateServer
 
+  @moduledoc """
+  Implements struct for persisting screen data and methods for manipulating screen state.
+  """
+
   defstruct sleep_wait_period: 0,
             chip8_height: 0,
             chip8_width: 0,
@@ -13,20 +17,35 @@ defmodule ExChip8.Screen do
 
   require Logger
 
+  @doc """
+  Request screen from server.
+  """
+  @spec get_screen() :: %Screen{}
   def get_screen() do
     GenServer.call(StateServer, {:get_screen})
   end
 
+  @doc """
+  Request server to update screen.
+  """
+  @spec update(screen :: %Screen{}) :: %Screen{}
   def update(%Screen{} = screen) do
     GenServer.call(StateServer, {:update_screen, screen})
   end
 
+  @doc """
+  Initialize screen with provided configuration.
+
+  Pixels are mapped as rows which contain columns.
+  """
+  @spec init_state(sleep_wait_period: integer, chip8_height: integer, chip8_width: integer) ::
+          %Screen{}
   def init_state(
         sleep_wait_period: sleep_wait_period,
         chip8_height: chip8_height,
         chip8_width: chip8_width
       ) do
-    screen = %Screen{
+    %Screen{
       sleep_wait_period: sleep_wait_period,
       chip8_height: chip8_height,
       chip8_width: chip8_width,
@@ -44,10 +63,12 @@ defmodule ExChip8.Screen do
         end)
         |> Map.new()
     }
-
-    screen
   end
 
+  @doc """
+  Set screen pixel as on/true at specified location.
+  """
+  @spec screen_set(screen :: %Screen{}, x :: integer, y :: integer) :: %Screen{}
   def screen_set(%Screen{} = screen, x, y) do
     %{^y => row} = screen.pixels
 
@@ -58,6 +79,12 @@ defmodule ExChip8.Screen do
     Map.put(screen, :pixels, updated_pixels)
   end
 
+  @doc """
+  Clear all pixels from screen.
+
+  All pixels will be set as off/false.
+  """
+  @spec screen_clear(screen :: %Screen{}) :: :ok
   def screen_clear(
         %Screen{
           chip8_height: chip8_height,
@@ -77,8 +104,14 @@ defmodule ExChip8.Screen do
       screen_unset(updated_screen, x, y)
       |> update()
     end)
+
+    :ok
   end
 
+  @doc """
+  Set screen pixel as off/false at specified location.
+  """
+  @spec screen_unset(screen :: %Screen{}, x :: integer, y :: integer) :: %Screen{}
   def screen_unset(%Screen{} = screen, x, y) do
     %{^y => row} = screen.pixels
 
@@ -89,6 +122,10 @@ defmodule ExChip8.Screen do
     Map.put(screen, :pixels, updated_pixels)
   end
 
+  @doc """
+  Check if pixel is set as on/true on screen.
+  """
+  @spec screen_is_set?(screen :: %Screen{}, x :: integer, y :: integer) :: boolean
   def screen_is_set?(%Screen{} = screen, x, y) do
     %{^y => row} = screen.pixels
 
@@ -97,6 +134,11 @@ defmodule ExChip8.Screen do
     col
   end
 
+  @type draw_attrs :: %{x: integer, y: integer, sprite_index: integer, num: integer}
+  @doc """
+  Draw sprite with specified index to screen at specified location.
+  """
+  @spec screen_draw_sprite(screen :: %Screen{}, attrs :: draw_attrs) :: %{collision: boolean}
   def screen_draw_sprite(%Screen{} = screen, attrs) do
     changeset = screen_draw_sprite_changeset(screen, attrs)
 
@@ -122,6 +164,13 @@ defmodule ExChip8.Screen do
     %{collision: collision}
   end
 
+  @type draw_changeset ::
+          {:skip, %{}} | {:update, %{x: integer, y: integer, collision: boolean, pixel: boolean}}
+  @doc """
+  Create changeset for drawing a sprite at specified location.
+  """
+  @spec screen_draw_sprite_changeset(screen :: %Screen{}, attrs :: draw_attrs) ::
+          list(draw_changeset)
   def screen_draw_sprite_changeset(%Screen{} = screen, %{
         x: x,
         y: y,

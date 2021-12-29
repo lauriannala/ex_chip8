@@ -30,6 +30,24 @@ defmodule ExChip8.StateServer do
     "F"
   ]
 
+  @moduledoc """
+  ### Overview
+
+  Persists chip8-data in memory.
+  GenServer-calls are used to manipulate and retrieve this data.
+
+  ## ETS-tables
+
+  * v_register
+  * registers
+  * memory
+  * stack
+
+  ## Elixir-maps
+  * screen pixels
+  * keyboard
+  """
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, @default_state, name: __MODULE__)
   end

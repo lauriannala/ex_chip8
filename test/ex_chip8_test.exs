@@ -38,7 +38,7 @@ defmodule ExChip8Test do
 
       original_length = :ets.info(:memory)[:size]
 
-      {:ok, _} = ExChip8.init({:ok, "filename"}, character_set)
+      {:ok, _} = ExChip8.init_character_set({:ok, "filename"}, character_set)
 
       assert Enum.slice(Memory.memory_all_values(), 0..3) ==
                character_set

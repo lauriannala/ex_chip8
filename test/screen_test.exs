@@ -146,7 +146,7 @@ defmodule ExChip8.ScreenTest do
     ExChip8.Memory.init(@chip8_memory_size)
 
     {:ok, "filename"}
-    |> ExChip8.init(@default_character_set)
+    |> ExChip8.init_character_set(@default_character_set)
 
     %{screen: Screen.get_screen()}
   end

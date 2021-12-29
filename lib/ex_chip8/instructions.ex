@@ -7,6 +7,18 @@ defmodule ExChip8.Instructions do
 
   @chip8_default_sprite_height Application.get_env(:ex_chip8, :chip8_default_sprite_height)
 
+  @moduledoc """
+  Implements all chip8 instructions.
+
+  Operation code is pattern matched to corresponding instruction implementation method.
+  Mutations are immediately executed according to instruction specification.
+  Uknown operation code raises.
+  """
+
+  @doc """
+  Execute instruction associated with opcode.
+  """
+  @spec exec(integer) :: :ok
   def exec(opcode) do
     nnn = opcode &&& 0x0FFF
     x = opcode >>> 8 &&& 0x000F
@@ -21,6 +33,8 @@ defmodule ExChip8.Instructions do
       kk: kk,
       n: n
     })
+
+    :ok
   end
 
   # CLS - Clear the display.

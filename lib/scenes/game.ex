@@ -25,7 +25,7 @@ defmodule ExChip8.Scenes.Game do
     viewport = opts[:viewport]
 
     ExChip8.create_state(@chip8_filename)
-    |> ExChip8.init(@default_character_set)
+    |> ExChip8.init_character_set(@default_character_set)
     |> ExChip8.read_file_to_memory(@chip8_program_load_address)
 
     {:ok, timer} = :timer.send_interval(@sleep_wait_period, :frame)
