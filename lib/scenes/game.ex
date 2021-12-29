@@ -23,11 +23,9 @@ defmodule ExChip8.Scenes.Game do
   def init(_, opts) do
     viewport = opts[:viewport]
 
-    chip8 =
-      {nil, nil, nil, nil, nil}
-      |> ExChip8.create_state(@chip8_filename)
-      |> ExChip8.init(@default_character_set)
-      |> ExChip8.read_file_to_memory(@chip8_program_load_address)
+    ExChip8.create_state(@chip8_filename)
+    |> ExChip8.init(@default_character_set)
+    |> ExChip8.read_file_to_memory(@chip8_program_load_address)
 
     {:ok, timer} = :timer.send_interval(@sleep_wait_period, :frame)
 
@@ -38,8 +36,7 @@ defmodule ExChip8.Scenes.Game do
       graph: @graph,
       frame_count: 1,
       frame_timer: timer,
-      opcode: 0x0000,
-      chip8: chip8
+      opcode: 0x0000
     }
 
     {:ok, state, push: state.graph}
@@ -48,38 +45,23 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_info(
         :frame,
-        %{frame_count: frame_count, chip8: {screen, memory, registers, stack, keyboard} = chip8} =
-          state
+        %{frame_count: frame_count} = state
       ) do
     opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
     pc = Registers.lookup_register(:pc)
     Registers.insert_register(:pc, pc + 2)
 
-    next_cycle =
-      {screen, memory, registers, stack, keyboard}
-      |> ExChip8.Instructions.exec(opcode)
-
-    updated_chip8 =
-      case next_cycle do
-        :wait_for_key_press ->
-          chip8
-
-        _ ->
-          next_cycle
-      end
+    ExChip8.Instructions.exec(opcode)
 
     graph =
       state.graph
-      |> draw_chip8(updated_chip8)
+      |> draw_chip8()
 
-    updated_chip8 =
-      updated_chip8
-      |> apply_delay()
-      |> apply_sound()
+    apply_delay()
+    apply_sound()
 
-    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode, chip8: updated_chip8},
-     push: graph}
+    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode}, push: graph}
   end
 
   @impl true
@@ -129,10 +111,7 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
-  defp draw_chip8(
-         graph,
-         {_screen, _memory, _registers, _stack, _keyboard}
-       ) do
+  defp draw_chip8(graph) do
     %Screen{
       chip8_height: chip8_height,
       chip8_width: chip8_width

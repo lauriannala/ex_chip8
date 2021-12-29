@@ -1,7 +1,7 @@
 defmodule ExChip8.Registers do
   alias ExChip8.StateServer
 
-  def init({screen, memory, registers, stack, keyboard}, v_size) do
+  def init(v_size) do
     0..(v_size - 1)
     |> Enum.each(fn index ->
       insert_v_register(index, 0x0)
@@ -12,8 +12,6 @@ defmodule ExChip8.Registers do
     insert_register(:sound_timer, 0)
     insert_register(:pc, 0x00)
     insert_register(:sp, 0x0)
-
-    {screen, memory, registers, stack, keyboard}
   end
 
   def lookup_v_register(index) when is_integer(index) do

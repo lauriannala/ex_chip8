@@ -2,13 +2,11 @@ defmodule ExChip8.Memory do
   alias ExChip8.StateServer
   import Bitwise
 
-  def init({sreen, memory, registers, stack, keyboard}, size) do
+  def init(size) do
     0..(size - 1)
     |> Enum.each(fn index ->
       insert_memory(index, 0x00)
     end)
-
-    {sreen, memory, registers, stack, keyboard}
   end
 
   def initialize_memory(values) do

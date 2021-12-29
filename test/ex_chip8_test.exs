@@ -1,8 +1,7 @@
 defmodule ExChip8Test do
   use ExChip8.StateCase
 
-  alias ExChip8
-  alias ExChip8.{Screen, Memory, Keyboard}
+  alias ExChip8.{Screen, Memory}
 
   describe "ExChip8 uninitialized" do
     test "create_state/0 creates state" do
@@ -12,7 +11,7 @@ defmodule ExChip8Test do
       chip8_memory_size = Application.get_env(:ex_chip8, :chip8_memory_size)
       chip8_total_data_registers = Application.get_env(:ex_chip8, :chip8_total_data_registers)
 
-      {:ok, {_, _, _, _, _}, _} = ExChip8.create_state({%Screen{}, nil, nil, nil, %Keyboard{}})
+      {:ok, _} = ExChip8.create_state("filename")
 
       screen = Screen.get_screen()
 
@@ -29,7 +28,7 @@ defmodule ExChip8Test do
   describe "ExChip8 with state" do
     setup [:with_state]
 
-    test "init/1 sets character_set to memory", %{state: {:ok, {_, _, _, _, _}, _} = state} do
+    test "init/1 sets character_set to memory", _ do
       character_set = [
         0xF0,
         0x90,
@@ -39,7 +38,7 @@ defmodule ExChip8Test do
 
       original_length = :ets.info(:memory)[:size]
 
-      {:ok, {_, _, _, _, _}, _} = ExChip8.init(state, character_set)
+      {:ok, _} = ExChip8.init({:ok, "filename"}, character_set)
 
       assert Enum.slice(Memory.memory_all_values(), 0..3) ==
                character_set
@@ -52,7 +51,8 @@ defmodule ExChip8Test do
   end
 
   defp with_state(_) do
-    state = ExChip8.create_state({%Screen{}, nil, nil, nil, %Keyboard{}})
-    %{state: state}
+    ExChip8.create_state("filename")
+
+    :ok
   end
 end

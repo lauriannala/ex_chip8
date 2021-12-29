@@ -2,14 +2,12 @@ defmodule ExChip8.Stack do
   alias ExChip8.Registers
   alias ExChip8.StateServer
 
-  def init({screen, memory, registers, stack, keyboard}, size) do
+  def init(size) do
     0..(size - 1)
     |> Enum.with_index()
     |> Enum.each(fn {_, index} ->
       insert_stack(index, 0x00)
     end)
-
-    {screen, memory, registers, stack, keyboard}
   end
 
   def insert_stack(index, value) when is_integer(index) and is_integer(value) do
@@ -21,7 +19,7 @@ defmodule ExChip8.Stack do
     value
   end
 
-  def stack_push({stack, registers}, value) do
+  def stack_push(value) do
     sp = Registers.lookup_register(:sp)
 
     if sp + 1 >= :ets.info(:stack)[:size],
@@ -30,13 +28,12 @@ defmodule ExChip8.Stack do
     insert_stack(sp, value)
 
     Registers.insert_register(:sp, sp + 1)
-    {stack, registers}
   end
 
-  def stack_pop({_, registers}) do
+  def stack_pop() do
     sp = Registers.lookup_register(:sp)
     Registers.insert_register(:sp, sp - 1)
 
-    {registers, Registers.lookup_register(:sp) |> lookup_stack()}
+    Registers.lookup_register(:sp) |> lookup_stack()
   end
 end

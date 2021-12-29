@@ -6,19 +6,15 @@ defmodule ExChip8 do
   alias ExChip8.Registers
   alias ExChip8.Memory
 
-  def create_state(state), do: create_state(state, "GAME")
+  def create_state(filename) do
+    ExChip8.Memory.init(@chip8_memory_size)
+    ExChip8.Registers.init(@chip8_total_data_registers)
+    ExChip8.Stack.init(@chip8_total_stack_depth)
 
-  def create_state(state, filename) do
-    state =
-      state
-      |> ExChip8.Memory.init(@chip8_memory_size)
-      |> ExChip8.Registers.init(@chip8_total_data_registers)
-      |> ExChip8.Stack.init(@chip8_total_stack_depth)
-
-    {:ok, state, String.to_charlist(filename)}
+    {:ok, String.to_charlist(filename)}
   end
 
-  def init({:ok, {screen, memory, registers, stack, keyboard}, filename}, character_set) do
+  def init({:ok, filename}, character_set) do
     values = Memory.memory_all_values()
 
     sliced =
@@ -32,11 +28,11 @@ defmodule ExChip8 do
 
     Memory.initialize_memory(memory_with_character_set)
 
-    {:ok, {screen, memory, registers, stack, keyboard}, filename}
+    {:ok, filename}
   end
 
   def read_file_to_memory(
-        {:ok, {screen, memory, registers, stack, keyboard}, filename},
+        {:ok, filename},
         load_address
       ) do
     game_binary = File.read!(filename)
@@ -50,7 +46,5 @@ defmodule ExChip8 do
     end)
 
     Registers.insert_register(:pc, load_address)
-
-    {screen, memory, registers, stack, keyboard}
   end
 end

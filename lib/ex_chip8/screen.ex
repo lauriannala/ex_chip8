@@ -103,19 +103,18 @@ defmodule ExChip8.Screen do
 
     screen = get_screen()
 
-    screen =
-      changeset
-      |> Enum.reduce(screen, fn c, updated_screen ->
-        {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
+    changeset
+    |> Enum.reduce(screen, fn c, updated_screen ->
+      {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
 
-        if pixel do
-          screen_set(updated_screen, x, y)
-          |> update()
-        else
-          screen_unset(updated_screen, x, y)
-          |> update()
-        end
-      end)
+      if pixel do
+        screen_set(updated_screen, x, y)
+        |> update()
+      else
+        screen_unset(updated_screen, x, y)
+        |> update()
+      end
+    end)
 
     collision =
       changeset
@@ -123,13 +122,12 @@ defmodule ExChip8.Screen do
         collision == true
       end)
 
-    %{collision: collision, screen: screen}
+    %{collision: collision}
   end
 
   def screen_draw_sprite_changeset(%{
         x: x,
         y: y,
-        memory: _,
         sprite_index: sprite_index,
         num: num
       }) do
@@ -175,27 +173,19 @@ defmodule ExChip8.Screen do
     |> Enum.filter(fn {status, _} -> status == :update end)
   end
 
-  def apply_delay({screen, memory, registers, stack, keyboard} = state) do
+  def apply_delay() do
     delay_timer = Registers.lookup_register(:delay_timer)
 
-    if delay_timer == 0 do
-      state
-    else
+    if delay_timer != 0 do
       Registers.insert_register(:delay_timer, delay_timer - 1)
-
-      {screen, memory, registers, stack, keyboard}
     end
   end
 
-  def apply_sound({screen, memory, registers, stack, keyboard} = state) do
+  def apply_sound() do
     sound_timer = Registers.lookup_register(:sound_timer)
 
-    if sound_timer == 0 do
-      state
-    else
+    if sound_timer != 0 do
       Registers.insert_register(:sound_timer, sound_timer - 1)
-
-      {screen, memory, registers, stack, keyboard}
     end
   end
 end

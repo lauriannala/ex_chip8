@@ -39,13 +39,11 @@ defmodule ExChip8.ScreenTest do
   describe "Initialized screen with memory" do
     setup [:initialize_with_memory]
 
-    test "screen_draw_sprite_changeset/1 sets changes correctly", %{screen: screen} do
+    test "screen_draw_sprite_changeset/1 sets changes correctly", _ do
       result =
         Screen.screen_draw_sprite_changeset(%{
-          screen: screen,
           x: 32,
           y: 30,
-          memory: nil,
           sprite_index: 0x00,
           num: 1
         })
@@ -59,18 +57,15 @@ defmodule ExChip8.ScreenTest do
     end
 
     test "screen_draw_sprite_changeset/1 sets collision correctly", %{screen: screen} do
-      screen_has_pixels =
-        screen
-        |> Screen.screen_set(0, 0)
-        |> Screen.screen_set(1, 0)
-        |> Screen.update()
+      screen
+      |> Screen.screen_set(0, 0)
+      |> Screen.screen_set(1, 0)
+      |> Screen.update()
 
       result =
         Screen.screen_draw_sprite_changeset(%{
-          screen: screen_has_pixels,
           x: 0,
           y: 0,
-          memory: nil,
           sprite_index: 0x00,
           num: 1
         })
@@ -83,19 +78,18 @@ defmodule ExChip8.ScreenTest do
              ] = result
     end
 
-    test "screen_draw_sprite/1 applies changesets to state", %{screen: screen} do
+    test "screen_draw_sprite/1 applies changesets to state", _ do
       %{
-        collision: collision,
-        screen: screen
+        collision: collision
       } =
         Screen.screen_draw_sprite(%{
-          screen: screen,
           x: 32,
           y: 30,
-          memory: nil,
           sprite_index: 0x00,
           num: 1
         })
+
+      screen = Screen.get_screen()
 
       assert collision == false
       assert Screen.screen_is_set?(screen, 32, 30) == true
@@ -116,7 +110,6 @@ defmodule ExChip8.ScreenTest do
         Screen.screen_draw_sprite(%{
           x: 0,
           y: 0,
-          memory: nil,
           sprite_index: 0x00,
           num: 1
         })
@@ -144,11 +137,9 @@ defmodule ExChip8.ScreenTest do
   defp initialize_with_memory(_) do
     initialize(%{})
 
-    old_state = {nil, nil, nil, nil, nil}
+    ExChip8.Memory.init(@chip8_memory_size)
 
-    ExChip8.Memory.init(old_state, @chip8_memory_size)
-
-    {:ok, old_state, "filename"}
+    {:ok, "filename"}
     |> ExChip8.init(@default_character_set)
 
     %{screen: Screen.get_screen()}
