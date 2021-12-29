@@ -49,7 +49,7 @@ defmodule ExChip8.Screen do
   end
 
   def screen_set(%Screen{} = screen, x, y) do
-    {:ok, row} = screen.pixels |> Map.fetch(y)
+    %{^y => row} = screen.pixels
 
     updated_row = row |> Map.replace!(x, true)
 
@@ -80,7 +80,7 @@ defmodule ExChip8.Screen do
   end
 
   def screen_unset(%Screen{} = screen, x, y) do
-    {:ok, row} = screen.pixels |> Map.fetch(y)
+    %{^y => row} = screen.pixels
 
     updated_row = row |> Map.replace!(x, false)
 
@@ -90,9 +90,9 @@ defmodule ExChip8.Screen do
   end
 
   def screen_is_set?(%Screen{} = screen, x, y) do
-    {:ok, row} = screen.pixels |> Map.fetch(y)
+    %{^y => row} = screen.pixels
 
-    {:ok, col} = row |> Map.fetch(x)
+    %{^x => col} = row
 
     col
   end
@@ -139,7 +139,7 @@ defmodule ExChip8.Screen do
         char = Enum.at(sprite_bytes, ly)
 
         y_target = rem(ly + y, screen.chip8_height)
-        {:ok, row} = screen.pixels |> Map.fetch(y_target)
+        %{^y_target => row} = screen.pixels
 
         0..(8 - 1)
         |> Enum.map(fn lx ->
@@ -148,7 +148,7 @@ defmodule ExChip8.Screen do
           else
             x_target = rem(lx + x, screen.chip8_width)
 
-            {:ok, pixel} = row |> Map.fetch(x_target)
+            %{^x_target => pixel} = row
 
             {:update,
              %{
