@@ -18,7 +18,7 @@ defmodule ExChip8.Screen do
     GenServer.call(StateServer, {:get_screen})
   end
 
-  def update_screen(%Screen{} = screen) do
+  def update(%Screen{} = screen) do
     GenServer.call(StateServer, {:update_screen, screen})
   end
 
@@ -57,7 +57,6 @@ defmodule ExChip8.Screen do
     updated_pixels = screen.pixels |> Map.replace!(y, updated_row)
 
     Map.put(screen, :pixels, updated_pixels)
-    |> update_screen()
   end
 
   def screen_clear(
@@ -77,6 +76,7 @@ defmodule ExChip8.Screen do
     changeset
     |> Enum.reduce(screen, fn {x, y}, updated_screen ->
       screen_unset(updated_screen, x, y)
+      |> update()
     end)
   end
 
@@ -88,7 +88,6 @@ defmodule ExChip8.Screen do
     updated_pixels = screen.pixels |> Map.replace!(y, updated_row)
 
     Map.put(screen, :pixels, updated_pixels)
-    |> update_screen()
   end
 
   def screen_is_set?(%Screen{} = screen, x, y) do
@@ -111,8 +110,10 @@ defmodule ExChip8.Screen do
 
         if pixel do
           screen_set(updated_screen, x, y)
+          |> update()
         else
           screen_unset(updated_screen, x, y)
+          |> update()
         end
       end)
 

@@ -36,9 +36,7 @@ defmodule ExChip8.Keyboard do
     Map.put(keyboard, :keyboard_map, keyboard_map)
   end
 
-  def keyboard_map(char) do
-    keyboard = get_keyboard()
-
+  def keyboard_map(%Keyboard{} = keyboard, char) do
     result =
       keyboard.keyboard_map
       |> Map.get(char, false)
@@ -49,23 +47,17 @@ defmodule ExChip8.Keyboard do
     end
   end
 
-  def keyboard_down(index) do
-    keyboard = get_keyboard()
-
+  def keyboard_down(%Keyboard{} = keyboard, index) do
     updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, true)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
 
-  def keyboard_up(index) do
-    keyboard = get_keyboard()
-
+  def keyboard_up(%Keyboard{} = keyboard, index) do
     updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, false)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
 
-  def keyboard_is_down(key) do
-    keyboard = get_keyboard()
-
+  def keyboard_is_down(%Keyboard{} = keyboard, key) do
     keyboard.keyboard |> Map.get(key, false)
   end
 end

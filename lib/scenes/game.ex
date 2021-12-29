@@ -88,14 +88,15 @@ defmodule ExChip8.Scenes.Game do
         _context,
         state
       ) do
-    index = Keyboard.keyboard_map(pressed_key)
+    index = Keyboard.keyboard_map(Keyboard.get_keyboard(), pressed_key)
 
     case index do
       false ->
         {:noreply, state}
 
       _ ->
-        Keyboard.keyboard_down(index)
+        Keyboard.get_keyboard()
+        |> Keyboard.keyboard_down(index)
         |> Map.put(:pressed_key, pressed_key)
         |> Keyboard.update()
 
@@ -109,14 +110,15 @@ defmodule ExChip8.Scenes.Game do
         _context,
         state
       ) do
-    index = Keyboard.keyboard_map(pressed_key)
+    index = Keyboard.keyboard_map(Keyboard.get_keyboard(), pressed_key)
 
     case index do
       false ->
         {:noreply, state}
 
       _ ->
-        Keyboard.keyboard_up(index)
+        Keyboard.get_keyboard()
+        |> Keyboard.keyboard_up(index)
         |> Map.put(:pressed_key, pressed_key)
         |> Keyboard.update()
 

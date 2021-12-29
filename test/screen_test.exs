@@ -26,7 +26,7 @@ defmodule ExChip8.ScreenTest do
     end
 
     test "screen_set/3 updates pixel correctly", %{screen: screen} do
-      updated_screen = Screen.screen_set(screen, 10, 15)
+      updated_screen = Screen.screen_set(screen, 10, 15) |> Screen.update()
 
       row = Map.get(updated_screen.pixels, 15)
       assert Map.get(row, 10) == true
@@ -63,6 +63,7 @@ defmodule ExChip8.ScreenTest do
         screen
         |> Screen.screen_set(0, 0)
         |> Screen.screen_set(1, 0)
+        |> Screen.update()
 
       result =
         Screen.screen_draw_sprite_changeset(%{
@@ -107,6 +108,7 @@ defmodule ExChip8.ScreenTest do
       screen
       |> Screen.screen_set(0, 0)
       |> Screen.screen_set(1, 0)
+      |> Screen.update()
 
       %{
         collision: collision
