@@ -19,6 +19,12 @@ defmodule ExChip8.Scenes.Game do
            translate: {trunc(@chip8_width * @chip8_tile_size), 35 + @font_size}
          )
 
+  @init_screen Scenic.Utilities.Texture.build!(
+                 :rgb,
+                 @chip8_width * @chip8_tile_size,
+                 @chip8_height * @chip8_tile_size
+               )
+
   @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
 
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
@@ -32,21 +38,33 @@ defmodule ExChip8.Scenes.Game do
   def init(_, opts) do
     viewport = opts[:viewport]
 
+    screen = @init_screen
+    Scenic.Cache.Dynamic.Texture.put("screen", screen)
+
     ExChip8.create_state(@chip8_filename)
     |> ExChip8.init_character_set(@default_character_set)
     |> ExChip8.read_file_to_memory(@chip8_program_load_address)
 
     {:ok, timer} = :timer.send_interval(@sleep_wait_period, :frame)
 
+    graph =
+      @graph
+      |> rect({@chip8_width * @chip8_tile_size, @chip8_height * @chip8_tile_size},
+        fill: {:dynamic, "screen"},
+        translate: {0, 0},
+        id: :chip8
+      )
+
     state = %{
       viewport: viewport,
       tile_width: trunc(@chip8_width / @chip8_tile_size),
       tile_height: trunc(@chip8_height / @chip8_tile_size),
-      graph: @graph,
+      graph: graph,
       frame_count: 1,
       frame_timer: timer,
       opcode: 0x0000,
-      paused: false
+      paused: false,
+      screen: screen
     }
 
     {:ok, state, push: state.graph}
@@ -55,7 +73,8 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_info(
         :frame,
-        %{frame_count: frame_count, paused: paused} = state
+        %{frame_count: frame_count, paused: paused, screen: screen} = state
+        # ) when rem(frame_count, 10) == 0 do
       ) do
     opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
@@ -71,9 +90,11 @@ defmodule ExChip8.Scenes.Game do
       end
     end
 
+    screen = draw_chip8(screen)
+    Scenic.Cache.Dynamic.Texture.put("screen", screen)
+
     graph =
       state.graph
-      |> draw_chip8()
       |> add_specs_to_graph([
         text_spec("Current opcode:",
           translate: {trunc(@chip8_width * @chip8_tile_size), 30}
@@ -88,7 +109,16 @@ defmodule ExChip8.Scenes.Game do
       apply_sound()
     end
 
-    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode}, push: graph}
+    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode, screen: screen},
+     push: graph}
+  end
+
+  @impl true
+  def handle_info(
+        :frame,
+        %{frame_count: frame_count} = state
+      ) do
+    {:noreply, %{state | frame_count: frame_count + 1}}
   end
 
   @impl true
@@ -143,32 +173,39 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
-  defp draw_chip8(graph) do
+  defp draw_chip8(screen) do
     %Screen{
       chip8_height: chip8_height,
       chip8_width: chip8_width
-    } = screen = Screen.get_screen()
+    } = chip8_screen = Screen.get_screen()
 
     changes =
       0..(chip8_height - 1)
       |> Enum.map(fn y ->
         0..(chip8_width - 1)
         |> Enum.map(fn x ->
-          {x, y, screen_is_set?(screen, x, y)}
+          {x, y, screen_is_set?(chip8_screen, x, y)}
         end)
       end)
       |> List.flatten()
       |> Enum.filter(fn {_, _, is_set} -> is_set == true end)
 
-    Enum.reduce(changes, graph, fn {x, y, _}, acc ->
-      draw_tile(acc, x, y)
+    Enum.reduce(changes, screen, fn {x, y, _}, acc ->
+      Enum.reduce(0..@chip8_tile_size, acc, fn x_offset, acc ->
+        Enum.reduce(0..@chip8_tile_size, acc, fn y_offset, acc ->
+          x_coord = x * @chip8_tile_size + x_offset
+          y_coord = y * @chip8_tile_size + y_offset
+          draw_tile(acc, x_coord, y_coord)
+        end)
+      end)
     end)
   end
 
-  defp draw_tile(graph, x, y, opts \\ []) do
-    tile_opts =
-      Keyword.merge([fill: :white, translate: {x * @chip8_tile_size, y * @chip8_tile_size}], opts)
+  defp draw_tile(screen, x, y) do
+    # tile_opts =
+    #   Keyword.merge([fill: :white, translate: {x * @chip8_tile_size, y * @chip8_tile_size}], opts)
 
-    graph |> rectangle({@chip8_tile_size, @chip8_tile_size}, tile_opts)
+    # graph |> rectangle({@chip8_tile_size, @chip8_tile_size}, tile_opts)
+    Scenic.Utilities.Texture.put!(screen, x, y, :white)
   end
 end
