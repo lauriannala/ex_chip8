@@ -2,15 +2,18 @@ defmodule ExChip8.Scenes.Game do
   use Scenic.Scene
   alias Scenic.Graph
   alias ExChip8.{Screen, Registers, Keyboard}
-  import Scenic.Primitives, only: [rectangle: 3]
+  import Scenic.Primitives
   import ExChip8.Registers
   import ExChip8.Screen
 
   @chip8_tile_size Application.get_env(:ex_chip8, :chip8_tile_size)
-  @graph Graph.build(font: :roboto, font_size: @chip8_tile_size)
+  @font_size Application.get_env(:ex_chip8, :font_size)
 
   @chip8_width Application.get_env(:ex_chip8, :chip8_width)
   @chip8_height Application.get_env(:ex_chip8, :chip8_height)
+
+  @graph Graph.build(font: :roboto, font_size: @font_size)
+
   @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
 
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
@@ -63,6 +66,14 @@ defmodule ExChip8.Scenes.Game do
     graph =
       state.graph
       |> draw_chip8()
+      |> add_specs_to_graph([
+        text_spec("Current opcode:",
+          translate: {trunc(@chip8_width * @chip8_tile_size), 30}
+        ),
+        text_spec(Integer.to_charlist(opcode, 16) |> to_string(),
+          translate: {trunc(@chip8_width * @chip8_tile_size), 30 + @font_size}
+        )
+      ])
 
     apply_delay()
     apply_sound()
