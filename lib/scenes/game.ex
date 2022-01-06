@@ -3,6 +3,7 @@ defmodule ExChip8.Scenes.Game do
   alias Scenic.Graph
   alias ExChip8.{Screen, Registers, Keyboard}
   import Scenic.Primitives
+  import Scenic.Components
   import ExChip8.Registers
   import ExChip8.Screen
 
@@ -13,6 +14,10 @@ defmodule ExChip8.Scenes.Game do
   @chip8_height Application.get_env(:ex_chip8, :chip8_height)
 
   @graph Graph.build(font: :roboto, font_size: @font_size)
+         |> button("Pause",
+           id: :pause_button,
+           translate: {trunc(@chip8_width * @chip8_tile_size), 35 + @font_size}
+         )
 
   @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
 
@@ -40,7 +45,8 @@ defmodule ExChip8.Scenes.Game do
       graph: @graph,
       frame_count: 1,
       frame_timer: timer,
-      opcode: 0x0000
+      opcode: 0x0000,
+      paused: false
     }
 
     {:ok, state, push: state.graph}
@@ -49,18 +55,20 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_info(
         :frame,
-        %{frame_count: frame_count} = state
+        %{frame_count: frame_count, paused: paused} = state
       ) do
     opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
-    pc = Registers.lookup_register(:pc)
-    Registers.insert_register(:pc, pc + 2)
+    if not paused do
+      pc = Registers.lookup_register(:pc)
+      Registers.insert_register(:pc, pc + 2)
 
-    executed = ExChip8.Instructions.exec(opcode)
+      executed = ExChip8.Instructions.exec(opcode)
 
-    if executed == :wait_for_key_press do
-      # Rewind program counter if waiting for key press.
-      Registers.insert_register(:pc, pc)
+      if executed == :wait_for_key_press do
+        # Rewind program counter if waiting for key press.
+        Registers.insert_register(:pc, pc)
+      end
     end
 
     graph =
@@ -75,10 +83,17 @@ defmodule ExChip8.Scenes.Game do
         )
       ])
 
-    apply_delay()
-    apply_sound()
+    if not paused do
+      apply_delay()
+      apply_sound()
+    end
 
     {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode}, push: graph}
+  end
+
+  @impl true
+  def filter_event({:click, :pause_button}, _, state) do
+    {:noreply, %{state | paused: not state.paused}}
   end
 
   @impl true
