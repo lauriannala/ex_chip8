@@ -1,4 +1,9 @@
 defmodule ExChip8.Scenes.Game do
+  @moduledoc """
+  Scenic scene for chip8 game.
+  Runs the game loop while updating the screen and receiving user input.
+  """
+
   use Scenic.Scene
   alias Scenic.Graph
   alias ExChip8.{Screen, Registers, Keyboard}
@@ -80,7 +85,6 @@ defmodule ExChip8.Scenes.Game do
           screen: screen,
           previous_changes: previous_changes
         } = state
-        # ) when rem(frame_count, 10) == 0 do
       ) do
     opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
@@ -96,8 +100,7 @@ defmodule ExChip8.Scenes.Game do
       end
     end
 
-    {screen, previous_changes} = draw_chip8(screen, previous_changes)
-    Scenic.Cache.Dynamic.Texture.put("screen", screen)
+    {screen, previous_changes} = draw_chip8(screen, previous_changes, frame_count)
 
     graph =
       state.graph
@@ -185,7 +188,7 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
-  defp draw_chip8(screen, previous_changes) do
+  def draw_chip8(screen, previous_changes, frame_count) do
     %Screen{
       chip8_height: chip8_height,
       chip8_width: chip8_width
@@ -202,16 +205,18 @@ defmodule ExChip8.Scenes.Game do
       |> List.flatten()
       |> Enum.filter(fn {_, _, is_set} -> is_set == true end)
 
-    new = changes -- previous_changes
-    draw_tile(screen, new, on: true)
+    new_pixels = changes -- previous_changes
+    draw_tile(screen, new_pixels, on: true)
 
-    remove = previous_changes -- changes
-    draw_tile(screen, remove, on: false)
+    removed_pixels = previous_changes -- changes
+    draw_tile(screen, removed_pixels, on: false)
+
+    maybe_update_screen(new_pixels, removed_pixels, frame_count, screen)
 
     {screen, changes}
   end
 
-  defp draw_tile(screen, changes, on: on) do
+  def draw_tile(screen, changes, on: on) do
     Enum.reduce(changes, screen, fn {x, y, _}, acc ->
       Enum.reduce(0..@chip8_tile_size, acc, fn x_offset, acc ->
         Enum.reduce(0..@chip8_tile_size, acc, fn y_offset, acc ->
@@ -223,11 +228,40 @@ defmodule ExChip8.Scenes.Game do
     end)
   end
 
-  defp draw_pixel(screen, x, y, true) do
+  def draw_pixel(screen, x, y, true) do
     Scenic.Utilities.Texture.put!(screen, x, y, :white)
   end
 
-  defp draw_pixel(screen, x, y, false) do
+  def draw_pixel(screen, x, y, false) do
     Scenic.Utilities.Texture.put!(screen, x, y, :black)
+  end
+
+  @doc """
+  ## Description
+
+  Updates the cached screen when certain preconditions are met.
+
+  ## Parameters
+
+    - new_pixels: List of new pixels that are on for this frame iteration.
+    - removed_pixels: List of changed pixels that turned off for this frame iteration.
+    - frame_count: How many frames have been executed in game.
+    - screen: Screen built with `Scenic.Utilities.Texture.build!`
+
+  ## Details
+
+    Updating screen from cache for every frame iteration is expensive.
+    This functions implements reasonable optimizations in order to run
+    screen updates only when necessary.
+
+    Screen is updated on any of these conditions:
+
+      - There are any pixels that are turned on or off
+      - Frame count is divisible by 50, basically a fallback if nothing seems to be happening in game
+  """
+  def maybe_update_screen(new_pixels, removed_pixels, frame_count, screen) do
+    if rem(frame_count, 50) == 0 or length(new_pixels) > 1 or length(removed_pixels) > 1 do
+      Scenic.Cache.Dynamic.Texture.put("screen", screen)
+    end
   end
 end
