@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install scenic dependencies
+      run: sudo apt-get install pkgconf libglfw3 libglfw3-dev libglew2.1 libglew-dev
     - uses: actions/checkout@v2
     - name: Set up Elixir
       uses: erlef/setup-beam@988e02bfe678367a02564f65ca2e37726dc0268f
