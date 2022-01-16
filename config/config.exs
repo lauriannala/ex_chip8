@@ -1,6 +1,5 @@
 import Config
 
-config :ex_chip8, :filename, "TETRIS"
 width = 64
 height = 32
 tile_size = 16
@@ -115,4 +114,4 @@ config :ex_chip8, :chip8_default_character_set, [
   0x80
 ]
 
-config :ex_chip8, :env, config_env()
+import_config "#{config_env()}.exs"

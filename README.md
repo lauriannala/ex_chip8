@@ -8,14 +8,28 @@
 
 Chip8 emulator written with Elixir using Scenic.
 
-# Running
+# Using release binary
 
-```bash
-Setup your rom game file and configure it to config/config.exs:
-config :ex_chip8, :filename, "<your totally awesome rom file>"
+```shell
+CHIP8_FILENAME="<rom filename>" ex_chip8 start
+```
 
+# Development
+
+```shell
+# Install deps and compile:
 mix deps.get
+mix compile
+
+# Run mix dev mix task:
 mix game
+
+# Run tests
+mix test
+
+# Configure used game rom:
+# config/dev.exs:
+# config :ex_chip8, :filename, "<rom filename>"
 ```
 
 # Dialyzer

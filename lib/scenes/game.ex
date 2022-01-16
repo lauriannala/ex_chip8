@@ -37,7 +37,7 @@ defmodule ExChip8.Scenes.Game do
   @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
   @chip8_program_load_address Application.get_env(:ex_chip8, :chip8_program_load_address)
 
-  @chip8_filename Application.get_env(:ex_chip8, :filename)
+  defp chip8_filename(), do: Application.get_env(:ex_chip8, :filename)
 
   require Logger
 
@@ -48,7 +48,8 @@ defmodule ExChip8.Scenes.Game do
     screen = @init_screen
     Scenic.Cache.Dynamic.Texture.put("screen", screen)
 
-    ExChip8.create_state(@chip8_filename)
+    chip8_filename()
+    |> ExChip8.create_state()
     |> ExChip8.init_character_set(@default_character_set)
     |> ExChip8.read_file_to_memory(@chip8_program_load_address)
 
