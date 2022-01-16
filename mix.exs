@@ -9,7 +9,8 @@ defmodule ExChip8.MixProject do
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      dialyzer: dialyzer()
     ]
   end
 
@@ -34,6 +35,13 @@ defmodule ExChip8.MixProject do
   defp aliases do
     [
       game: ["scenic.run"]
+    ]
+  end
+
+  defp dialyzer() do
+    [
+      plt_core_path: "priv/plts",
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
     ]
   end
 end
