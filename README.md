@@ -8,10 +8,17 @@
 
 Chip8 emulator written with Elixir using Scenic.
 
+# Requirements
+
+```shell
+# Scenic deps installation:
+sudo apt-get install pkgconf libglfw3 libglfw3-dev libglew2.1 libglew-dev
+```
+
 # Using release binary
 
 ```shell
-CHIP8_FILENAME="<rom filename>" ex_chip8 start
+CHIP8_FILENAME="<rom filename>" ./chip8/bin/ex_chip8 start
 ```
 
 # Development
