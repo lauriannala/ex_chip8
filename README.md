@@ -1,6 +1,6 @@
 # ExChip8
 
-Experimental project: chip8 emulator written with Elixir using Scenic.
+Chip8 emulator written with Elixir using Scenic.
 
 # Running
 
@@ -17,4 +17,7 @@ mix game
 ```shell
 # Create plt cache folder.
 mkdir -p priv/plts
+
+# Run dialyzer check.
+mix dialyzer
 ```
