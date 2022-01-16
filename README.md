@@ -1,3 +1,5 @@
+[![Elixir CI](https://github.com/lauriannala/ex_chip8/actions/workflows/elixir.yml/badge.svg)](https://github.com/lauriannala/ex_chip8/actions/workflows/elixir.yml)
+
 # ExChip8
 
 Chip8 emulator written with Elixir using Scenic.
