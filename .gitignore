@@ -29,4 +29,7 @@ ex_chip8-*.tar
 *.swp
 
 TETRIS
-priv/plts
+
+# Dialyzer
+/priv/plts/*.plt
+/priv/plts/*.plt.hash
