@@ -4,6 +4,8 @@ defmodule ExChip8.Scenes.Game do
   Runs the game loop while updating the screen and receiving user input.
   """
 
+  @type pixel_change() :: {integer(), integer(), boolean()}
+
   use Scenic.Scene
   alias Scenic.Graph
   alias ExChip8.{Screen, Registers, Keyboard}
@@ -194,6 +196,10 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
+  @doc """
+  Draws the whole chip8 screen texture.
+  """
+  @spec draw_chip8(any(), list(pixel_change()), integer()) :: {any(), list(pixel_change())}
   def draw_chip8(screen, previous_changes, frame_count) do
     %Screen{
       chip8_height: chip8_height,
@@ -222,6 +228,10 @@ defmodule ExChip8.Scenes.Game do
     {screen, changes}
   end
 
+  @doc """
+  Draws single tile (multiple pixels according to tile size) to screen texture.
+  """
+  @spec draw_tile(any(), list(pixel_change()), on: boolean()) :: :ok
   def draw_tile(screen, changes, on: on) do
     Enum.reduce(changes, screen, fn {x, y, _}, acc ->
       Enum.reduce(0..@chip8_tile_size, acc, fn x_offset, acc ->
@@ -232,8 +242,14 @@ defmodule ExChip8.Scenes.Game do
         end)
       end)
     end)
+
+    :ok
   end
 
+  @doc """
+  Draws single pixel to screen texture.
+  """
+  @spec draw_pixel(any(), integer(), integer(), boolean()) :: any()
   def draw_pixel(screen, x, y, true) do
     Scenic.Utilities.Texture.put!(screen, x, y, :white)
   end
@@ -265,9 +281,12 @@ defmodule ExChip8.Scenes.Game do
       - There are any pixels that are turned on or off
       - Frame count is divisible by 50, basically a fallback if nothing seems to be happening in game
   """
+  @spec maybe_update_screen(list(pixel_change()), list(pixel_change()), integer(), any()) :: :ok
   def maybe_update_screen(new_pixels, removed_pixels, frame_count, screen) do
     if rem(frame_count, 50) == 0 or length(new_pixels) > 1 or length(removed_pixels) > 1 do
       Scenic.Cache.Dynamic.Texture.put("screen", screen)
     end
+
+    :ok
   end
 end
