@@ -11,3 +11,10 @@ config :ex_chip8, :filename, "<your totally awesome rom file>"
 mix deps.get
 mix game
 ```
+
+# Dialyzer
+
+```shell
+# Create plt cache folder.
+mkdir -p priv/plts
+```
