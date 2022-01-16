@@ -64,7 +64,8 @@ defmodule ExChip8.Scenes.Game do
       frame_timer: timer,
       opcode: 0x0000,
       paused: false,
-      screen: screen
+      screen: screen,
+      previous_changes: []
     }
 
     {:ok, state, push: state.graph}
@@ -73,7 +74,12 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_info(
         :frame,
-        %{frame_count: frame_count, paused: paused, screen: screen} = state
+        %{
+          frame_count: frame_count,
+          paused: paused,
+          screen: screen,
+          previous_changes: previous_changes
+        } = state
         # ) when rem(frame_count, 10) == 0 do
       ) do
     opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
@@ -90,7 +96,7 @@ defmodule ExChip8.Scenes.Game do
       end
     end
 
-    screen = draw_chip8(screen)
+    {screen, previous_changes} = draw_chip8(screen, previous_changes)
     Scenic.Cache.Dynamic.Texture.put("screen", screen)
 
     graph =
@@ -109,8 +115,14 @@ defmodule ExChip8.Scenes.Game do
       apply_sound()
     end
 
-    {:noreply, %{state | frame_count: frame_count + 1, opcode: opcode, screen: screen},
-     push: graph}
+    {:noreply,
+     %{
+       state
+       | frame_count: frame_count + 1,
+         opcode: opcode,
+         screen: screen,
+         previous_changes: previous_changes
+     }, push: graph}
   end
 
   @impl true
@@ -173,7 +185,7 @@ defmodule ExChip8.Scenes.Game do
   @impl true
   def handle_input(_, _, state), do: {:noreply, state}
 
-  defp draw_chip8(screen) do
+  defp draw_chip8(screen, previous_changes) do
     %Screen{
       chip8_height: chip8_height,
       chip8_width: chip8_width
@@ -190,22 +202,32 @@ defmodule ExChip8.Scenes.Game do
       |> List.flatten()
       |> Enum.filter(fn {_, _, is_set} -> is_set == true end)
 
+    new = changes -- previous_changes
+    draw_tile(screen, new, on: true)
+
+    remove = previous_changes -- changes
+    draw_tile(screen, remove, on: false)
+
+    {screen, changes}
+  end
+
+  defp draw_tile(screen, changes, on: on) do
     Enum.reduce(changes, screen, fn {x, y, _}, acc ->
       Enum.reduce(0..@chip8_tile_size, acc, fn x_offset, acc ->
         Enum.reduce(0..@chip8_tile_size, acc, fn y_offset, acc ->
           x_coord = x * @chip8_tile_size + x_offset
           y_coord = y * @chip8_tile_size + y_offset
-          draw_tile(acc, x_coord, y_coord)
+          draw_pixel(acc, x_coord, y_coord, on)
         end)
       end)
     end)
   end
 
-  defp draw_tile(screen, x, y) do
-    # tile_opts =
-    #   Keyword.merge([fill: :white, translate: {x * @chip8_tile_size, y * @chip8_tile_size}], opts)
-
-    # graph |> rectangle({@chip8_tile_size, @chip8_tile_size}, tile_opts)
+  defp draw_pixel(screen, x, y, true) do
     Scenic.Utilities.Texture.put!(screen, x, y, :white)
+  end
+
+  defp draw_pixel(screen, x, y, false) do
+    Scenic.Utilities.Texture.put!(screen, x, y, :black)
   end
 end
