@@ -7,7 +7,7 @@ defmodule ExChip8.StateCase do
     end
   end
 
-  setup tags do
+  setup _ do
     start_supervised(ExChip8.StateServer)
 
     :ok

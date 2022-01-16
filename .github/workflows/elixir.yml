@@ -55,7 +55,7 @@ jobs:
         mix dialyzer --plt
 
     - name: Run dialyzer
-      run: mix dialyzer
+      run: MIX_ENV=dev mix dialyzer
 
     - name: Run tests
       run: mix test
