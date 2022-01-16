@@ -193,7 +193,7 @@ defmodule ExChip8.Instructions do
     updated_vf = updated_x > 0xFF
 
     Registers.insert_v_register(x, updated_x)
-    Registers.insert_v_register(0x0F, updated_vf)
+    Registers.insert_v_register(0x0F, boolean_to_integer(updated_vf))
   end
 
   # SUB Vx, Vy - 8xy5, Set Vx = Vx - Vy, set VF = Not borrow.
@@ -210,7 +210,7 @@ defmodule ExChip8.Instructions do
     updated_vf = x_value > y_value
 
     Registers.insert_v_register(x, updated_x)
-    Registers.insert_v_register(0x0F, updated_vf)
+    Registers.insert_v_register(0x0F, boolean_to_integer(updated_vf))
   end
 
   # SHR Vx {, Vy} - 8xy6.
@@ -241,7 +241,7 @@ defmodule ExChip8.Instructions do
     updated_x = y_value - x_value
 
     Registers.insert_v_register(x, updated_x)
-    Registers.insert_v_register(0x0F, updated_vf)
+    Registers.insert_v_register(0x0F, boolean_to_integer(updated_vf))
   end
 
   # SHL Vx {, Vy} - 8xyE.
