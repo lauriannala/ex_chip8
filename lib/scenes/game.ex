@@ -81,23 +81,31 @@ defmodule ExChip8.Scenes.Game do
         :frame,
         %{
           frame_count: frame_count,
-          paused: paused,
+          paused: true
+        } = state
+      ) do
+    {:noreply, %{state | frame_count: frame_count + 1}}
+  end
+
+  @impl true
+  def handle_info(
+        :frame,
+        %{
+          frame_count: frame_count,
           screen: screen,
           previous_changes: previous_changes
         } = state
       ) do
     opcode = Registers.lookup_register(:pc) |> ExChip8.Memory.memory_get_short()
 
-    if not paused do
-      pc = Registers.lookup_register(:pc)
-      Registers.insert_register(:pc, pc + 2)
+    pc = Registers.lookup_register(:pc)
+    Registers.insert_register(:pc, pc + 2)
 
-      executed = ExChip8.Instructions.exec(opcode)
+    executed = ExChip8.Instructions.exec(opcode)
 
-      if executed == :wait_for_key_press do
-        # Rewind program counter if waiting for key press.
-        Registers.insert_register(:pc, pc)
-      end
+    if executed == :wait_for_key_press do
+      # Rewind program counter if waiting for key press.
+      Registers.insert_register(:pc, pc)
     end
 
     {screen, previous_changes} = draw_chip8(screen, previous_changes, frame_count)
@@ -113,10 +121,8 @@ defmodule ExChip8.Scenes.Game do
         )
       ])
 
-    if not paused do
-      apply_delay()
-      apply_sound()
-    end
+    apply_delay()
+    apply_sound()
 
     {:noreply,
      %{
