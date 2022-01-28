@@ -7,24 +7,24 @@ defmodule ExChip8 do
   alias ExChip8.Memory
 
   @doc """
-  Creates state and returns ok-tuple with filename as charlist.
+  Creates state and returns filename as charlist.
 
   Calls initialization for memory, registers and stack according to environment config.
   """
-  @spec create_state(filename :: String.t()) :: {:ok, charlist}
+  @spec create_state(filename :: String.t()) :: charlist
   def create_state(filename) do
     ExChip8.Memory.init(@chip8_memory_size)
     ExChip8.Registers.init(@chip8_total_data_registers)
     ExChip8.Stack.init(@chip8_total_stack_depth)
 
-    {:ok, String.to_charlist(filename)}
+    String.to_charlist(filename)
   end
 
   @doc """
-  Initializes character set to memory, returns ok-tuple with filename.
+  Initializes character set to memory, returns filename.
   """
-  @spec init_character_set({:ok, filename :: charlist}, list(integer)) :: {:ok, charlist}
-  def init_character_set({:ok, filename}, character_set) do
+  @spec init_character_set(charlist, list(integer)) :: charlist
+  def init_character_set(filename, character_set) do
     values = Memory.memory_all_values()
 
     sliced =
@@ -38,15 +38,15 @@ defmodule ExChip8 do
 
     Memory.initialize_memory(memory_with_character_set)
 
-    {:ok, filename}
+    filename
   end
 
   @doc """
   Read file binary contents to memory and set program counter to specified load address.
   """
-  @spec read_file_to_memory({:ok, filename :: charlist}, load_address :: integer) :: :ok
+  @spec read_file_to_memory(charlist, load_address :: integer) :: :ok
   def read_file_to_memory(
-        {:ok, filename},
+        filename,
         load_address
       ) do
     game_binary = File.read!(filename)

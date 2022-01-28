@@ -11,7 +11,7 @@ defmodule ExChip8Test do
       chip8_memory_size = Application.get_env(:ex_chip8, :chip8_memory_size)
       chip8_total_data_registers = Application.get_env(:ex_chip8, :chip8_total_data_registers)
 
-      {:ok, _} = ExChip8.create_state("filename")
+      ExChip8.create_state("filename")
 
       screen = Screen.get_screen()
 
@@ -38,7 +38,7 @@ defmodule ExChip8Test do
 
       original_length = :ets.info(:memory)[:size]
 
-      {:ok, _} = ExChip8.init_character_set({:ok, "filename"}, character_set)
+      ExChip8.init_character_set({:ok, "filename"}, character_set)
 
       assert Enum.slice(Memory.memory_all_values(), 0..3) ==
                character_set
