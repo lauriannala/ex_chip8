@@ -14,11 +14,11 @@ defmodule ExChip8.Scenes.Game do
   import ExChip8.Registers
   import ExChip8.Screen
 
-  @chip8_tile_size Application.get_env(:ex_chip8, :chip8_tile_size)
-  @font_size Application.get_env(:ex_chip8, :font_size)
+  @chip8_tile_size Application.compile_env!(:ex_chip8, :chip8_tile_size)
+  @font_size Application.compile_env!(:ex_chip8, :font_size)
 
-  @chip8_width Application.get_env(:ex_chip8, :chip8_width)
-  @chip8_height Application.get_env(:ex_chip8, :chip8_height)
+  @chip8_width Application.compile_env!(:ex_chip8, :chip8_width)
+  @chip8_height Application.compile_env!(:ex_chip8, :chip8_height)
 
   @graph Graph.build(font: :roboto, font_size: @font_size)
          |> button("Pause",
@@ -32,12 +32,12 @@ defmodule ExChip8.Scenes.Game do
                  @chip8_height * @chip8_tile_size
                )
 
-  @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
+  @sleep_wait_period Application.compile_env!(:ex_chip8, :sleep_wait_period)
 
-  @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
-  @chip8_program_load_address Application.get_env(:ex_chip8, :chip8_program_load_address)
+  @default_character_set Application.compile_env!(:ex_chip8, :chip8_default_character_set)
+  @chip8_program_load_address Application.compile_env!(:ex_chip8, :chip8_program_load_address)
 
-  defp chip8_filename(), do: Application.get_env(:ex_chip8, :filename)
+  defp chip8_filename(), do: Application.fetch_env!(:ex_chip8, :filename)
 
   require Logger
 

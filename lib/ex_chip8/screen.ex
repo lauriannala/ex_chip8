@@ -183,36 +183,38 @@ defmodule ExChip8.Screen do
 
     changeset =
       0..(num - 1)
-      |> Enum.map(fn ly ->
-        char = Enum.at(sprite_bytes, ly)
-
-        y_target = rem(ly + y, screen.chip8_height)
-        %{^y_target => row} = screen.pixels
-
-        0..(8 - 1)
-        |> Enum.map(fn lx ->
-          if (char &&& 0b10000000 >>> lx) == 0 do
-            {:skip, %{}}
-          else
-            x_target = rem(lx + x, screen.chip8_width)
-
-            %{^x_target => pixel} = row
-
-            {:update,
-             %{
-               x: x_target,
-               y: y_target,
-               # Pixel was previously set as true.
-               collision: pixel,
-               # Basically XOR from previous state.
-               pixel: !pixel
-             }}
-          end
-        end)
-      end)
+      |> Enum.map(&do_sprite_change(&1, sprite_bytes, screen, y, x))
 
     changeset
     |> List.flatten()
     |> Enum.filter(fn {status, _} -> status == :update end)
+  end
+
+  defp do_sprite_change(ly, sprite_bytes, screen, y, x) do
+    char = Enum.at(sprite_bytes, ly)
+
+    y_target = rem(ly + y, screen.chip8_height)
+    %{^y_target => row} = screen.pixels
+
+    0..(8 - 1)
+    |> Enum.map(fn lx ->
+      if (char &&& 0b10000000 >>> lx) == 0 do
+        {:skip, %{}}
+      else
+        x_target = rem(lx + x, screen.chip8_width)
+
+        %{^x_target => pixel} = row
+
+        {:update,
+         %{
+           x: x_target,
+           y: y_target,
+           # Pixel was previously set as true.
+           collision: pixel,
+           # Basically XOR from previous state.
+           pixel: !pixel
+         }}
+      end
+    end)
   end
 end

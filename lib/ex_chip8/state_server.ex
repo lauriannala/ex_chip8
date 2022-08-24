@@ -2,10 +2,10 @@ defmodule ExChip8.StateServer do
   use GenServer
   use ExChip8.State
 
-  @chip8_width Application.get_env(:ex_chip8, :chip8_width)
-  @chip8_height Application.get_env(:ex_chip8, :chip8_height)
-  @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
-  @chip8_total_keys Application.get_env(:ex_chip8, :chip8_total_keys)
+  @chip8_width Application.compile_env!(:ex_chip8, :chip8_width)
+  @chip8_height Application.compile_env!(:ex_chip8, :chip8_height)
+  @sleep_wait_period Application.compile_env!(:ex_chip8, :sleep_wait_period)
+  @chip8_total_keys Application.compile_env!(:ex_chip8, :chip8_total_keys)
 
   @keyboard_map [
     "0",
@@ -44,8 +44,8 @@ defmodule ExChip8.StateServer do
   * keyboard
   """
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, @default_state, name: __MODULE__)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl true

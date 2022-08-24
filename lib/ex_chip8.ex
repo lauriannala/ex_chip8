@@ -1,7 +1,7 @@
 defmodule ExChip8 do
-  @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
-  @chip8_total_data_registers Application.get_env(:ex_chip8, :chip8_total_data_registers)
-  @chip8_total_stack_depth Application.get_env(:ex_chip8, :chip8_total_stack_depth)
+  @chip8_memory_size Application.compile_env!(:ex_chip8, :chip8_memory_size)
+  @chip8_total_data_registers Application.compile_env!(:ex_chip8, :chip8_total_data_registers)
+  @chip8_total_stack_depth Application.compile_env!(:ex_chip8, :chip8_total_stack_depth)
 
   alias ExChip8.Registers
   alias ExChip8.Memory

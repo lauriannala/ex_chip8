@@ -5,7 +5,7 @@ defmodule ExChip8.Instructions do
 
   require Logger
 
-  @chip8_default_sprite_height Application.get_env(:ex_chip8, :chip8_default_sprite_height)
+  @chip8_default_sprite_height Application.compile_env!(:ex_chip8, :chip8_default_sprite_height)
 
   @moduledoc """
   Implements all chip8 instructions.

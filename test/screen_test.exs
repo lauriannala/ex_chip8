@@ -4,8 +4,8 @@ defmodule ExChip8.ScreenTest do
   alias ExChip8.Screen
   alias ExChip8.Screen
 
-  @chip8_memory_size Application.get_env(:ex_chip8, :chip8_memory_size)
-  @default_character_set Application.get_env(:ex_chip8, :chip8_default_character_set)
+  @chip8_memory_size Application.compile_env!(:ex_chip8, :chip8_memory_size)
+  @default_character_set Application.compile_env!(:ex_chip8, :chip8_default_character_set)
 
   describe "Initialized screen" do
     setup [:initialize]
