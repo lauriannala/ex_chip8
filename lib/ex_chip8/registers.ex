@@ -1,5 +1,5 @@
 defmodule ExChip8.Registers do
-  alias ExChip8.StateServer
+  use ExChip8.State
 
   @moduledoc """
   Implements methods for retrieving and manipulating register data from StateServer.
@@ -36,7 +36,7 @@ defmodule ExChip8.Registers do
   """
   @spec lookup_v_register(index :: integer) :: integer
   def lookup_v_register(index) when is_integer(index) do
-    [{^index, value}] = GenServer.call(StateServer, {:lookup_v_register, index})
+    [{^index, value}] = :ets.lookup(@v_register, index)
     value
   end
 
@@ -45,7 +45,7 @@ defmodule ExChip8.Registers do
   """
   @spec insert_v_register(index :: integer, value :: integer) :: :ok
   def insert_v_register(index, value) when is_integer(index) do
-    GenServer.call(StateServer, {:insert_v_register, index, value})
+    :ets.insert(@v_register, {index, value})
 
     :ok
   end
@@ -55,7 +55,7 @@ defmodule ExChip8.Registers do
   """
   @spec lookup_register(register :: atom) :: integer
   def lookup_register(register) when is_atom(register) do
-    [{^register, value}] = GenServer.call(StateServer, {:lookup_register, register})
+    [{^register, value}] = :ets.lookup(@registers, register)
     value
   end
 
@@ -64,7 +64,8 @@ defmodule ExChip8.Registers do
   """
   @spec insert_register(register :: atom, value :: integer) :: integer
   def insert_register(register, value) when is_atom(register) do
-    GenServer.call(StateServer, {:insert_register, register, value})
+    :ets.insert(@registers, {register, value})
+    value
   end
 
   @doc """

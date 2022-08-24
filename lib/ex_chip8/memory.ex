@@ -1,5 +1,5 @@
 defmodule ExChip8.Memory do
-  alias ExChip8.StateServer
+  use ExChip8.State
   import Bitwise
 
   @moduledoc """
@@ -49,7 +49,7 @@ defmodule ExChip8.Memory do
   """
   @spec insert_memory(at :: integer, value :: integer) :: :ok
   def insert_memory(at, value) when is_integer(at) and is_integer(value) do
-    GenServer.call(StateServer, {:insert_memory, at, value})
+    :ets.insert(@memory, {at, value})
 
     :ok
   end
@@ -59,7 +59,7 @@ defmodule ExChip8.Memory do
   """
   @spec lookup_memory(at :: integer) :: integer
   def lookup_memory(at) when is_integer(at) do
-    [{^at, value}] = GenServer.call(StateServer, {:lookup_memory, at})
+    [{^at, value}] = :ets.lookup(@memory, at)
     value
   end
 
@@ -70,7 +70,7 @@ defmodule ExChip8.Memory do
   """
   @spec memory_all_values() :: list(integer)
   def memory_all_values() do
-    GenServer.call(StateServer, {:memory_all_values})
+    :ets.tab2list(@memory)
     |> Enum.sort_by(fn {index, _} -> index end)
     |> Enum.map(fn {_index, value} -> value end)
   end

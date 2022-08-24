@@ -1,6 +1,6 @@
 defmodule ExChip8.Screen do
   alias ExChip8.Screen
-  alias ExChip8.StateServer
+  use ExChip8.State
 
   @moduledoc """
   Implements struct for persisting screen data and methods for manipulating screen state.

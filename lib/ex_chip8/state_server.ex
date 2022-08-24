@@ -1,15 +1,11 @@
 defmodule ExChip8.StateServer do
   use GenServer
+  use ExChip8.State
 
   @chip8_width Application.get_env(:ex_chip8, :chip8_width)
   @chip8_height Application.get_env(:ex_chip8, :chip8_height)
   @sleep_wait_period Application.get_env(:ex_chip8, :sleep_wait_period)
   @chip8_total_keys Application.get_env(:ex_chip8, :chip8_total_keys)
-  @default_state :ok
-  @v_register :v_register
-  @registers :registers
-  @memory :memory
-  @stack :stack
 
   @keyboard_map [
     "0",
@@ -100,60 +96,6 @@ defmodule ExChip8.StateServer do
     state = %{screen: screen, keyboard: keyboard}
 
     {:ok, state}
-  end
-
-  @impl true
-  def handle_call({:lookup_v_register, index}, _pid, state) do
-    value = :ets.lookup(@v_register, index)
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:insert_v_register, index, value}, _pid, state) do
-    :ets.insert(@v_register, {index, value})
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:lookup_register, register}, _pid, state) do
-    value = :ets.lookup(@registers, register)
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:insert_register, register, value}, _pid, state) do
-    :ets.insert(@registers, {register, value})
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:lookup_memory, at}, _pid, state) do
-    value = :ets.lookup(@memory, at)
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:insert_memory, at, value}, _pid, state) do
-    :ets.insert(@memory, {at, value})
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:memory_all_values}, _pid, state) do
-    values = :ets.tab2list(@memory)
-    {:reply, values, state}
-  end
-
-  @impl true
-  def handle_call({:lookup_stack, index}, _pid, state) do
-    value = :ets.lookup(@stack, index)
-    {:reply, value, state}
-  end
-
-  @impl true
-  def handle_call({:insert_stack, index, value}, _pid, state) do
-    :ets.insert(@stack, {index, value})
-    {:reply, value, state}
   end
 
   @impl true

@@ -1,6 +1,6 @@
 defmodule ExChip8.Stack do
   alias ExChip8.Registers
-  alias ExChip8.StateServer
+  use ExChip8.State
 
   @moduledoc """
   Implements methods for retrieving and manipulating stack data from StateServer.
@@ -25,7 +25,7 @@ defmodule ExChip8.Stack do
   """
   @spec insert_stack(index :: integer, value :: integer) :: :ok
   def insert_stack(index, value) when is_integer(index) and is_integer(value) do
-    GenServer.call(StateServer, {:insert_stack, index, value})
+    :ets.insert(@stack, {index, value})
 
     :ok
   end
@@ -35,7 +35,7 @@ defmodule ExChip8.Stack do
   """
   @spec lookup_stack(index :: integer) :: integer
   def lookup_stack(index) when is_integer(index) do
-    [{^index, value}] = GenServer.call(StateServer, {:lookup_stack, index})
+    [{^index, value}] = :ets.lookup(@stack, index)
     value
   end
 

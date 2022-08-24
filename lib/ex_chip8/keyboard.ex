@@ -1,6 +1,6 @@
 defmodule ExChip8.Keyboard do
   alias ExChip8.Keyboard
-  alias ExChip8.StateServer
+  use ExChip8.State
 
   @moduledoc """
   Implements struct for persisting keyboard data and methods for manipulating keyboard state.
