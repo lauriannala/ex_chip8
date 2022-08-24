@@ -1,5 +1,4 @@
 defmodule ExChip8.Keyboard do
-  alias ExChip8.Keyboard
   use ExChip8.State
 
   @moduledoc """
@@ -13,7 +12,7 @@ defmodule ExChip8.Keyboard do
   @doc """
   Request keyboard from server.
   """
-  @spec get_keyboard() :: %Keyboard{}
+  @spec get_keyboard() :: %__MODULE__{}
   def get_keyboard() do
     GenServer.call(StateServer, {:get_keyboard})
   end
@@ -21,17 +20,17 @@ defmodule ExChip8.Keyboard do
   @doc """
   Request server to update keyboard.
   """
-  @spec update(keyboard :: %Keyboard{}) :: %Keyboard{}
-  def update(%Keyboard{} = keyboard) do
+  @spec update(keyboard :: %__MODULE__{}) :: %__MODULE__{}
+  def update(%__MODULE__{} = keyboard) do
     GenServer.call(StateServer, {:update_keyboard, keyboard})
   end
 
   @doc """
   Initalize keyboard with provided size.
   """
-  @spec init(k_size :: integer) :: %Keyboard{}
+  @spec init(k_size :: integer) :: %__MODULE__{}
   def init(k_size) do
-    %Keyboard{
+    %__MODULE__{
       keyboard:
         0..(k_size - 1)
         |> Enum.with_index()
@@ -43,7 +42,7 @@ defmodule ExChip8.Keyboard do
   @doc """
   Set keyboard with provided keyboard map.
   """
-  @spec keyboard_set_map(keyboard :: %Keyboard{}, map :: list(String.t())) :: %Keyboard{}
+  @spec keyboard_set_map(keyboard :: %__MODULE__{}, map :: list(String.t())) :: %__MODULE__{}
   def keyboard_set_map(keyboard, map) do
     keyboard_map =
       map
@@ -57,8 +56,8 @@ defmodule ExChip8.Keyboard do
   @doc """
   Get keyboard mapping (index) for provided character.
   """
-  @spec keyboard_map(keyboard :: %Keyboard{}, char :: integer) :: false | integer
-  def keyboard_map(%Keyboard{} = keyboard, char) do
+  @spec keyboard_map(keyboard :: %__MODULE__{}, char :: integer) :: false | integer
+  def keyboard_map(%__MODULE__{} = keyboard, char) do
     result =
       keyboard.keyboard_map
       |> Map.get(char, false)
@@ -72,8 +71,8 @@ defmodule ExChip8.Keyboard do
   @doc """
   Set specified index as down/pressed/true.
   """
-  @spec keyboard_down(keyboard :: %Keyboard{}, index :: integer) :: %Keyboard{}
-  def keyboard_down(%Keyboard{} = keyboard, index) do
+  @spec keyboard_down(keyboard :: %__MODULE__{}, index :: integer) :: %__MODULE__{}
+  def keyboard_down(%__MODULE__{} = keyboard, index) do
     updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, true)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
@@ -81,8 +80,8 @@ defmodule ExChip8.Keyboard do
   @doc """
   Set specified index as up/not pressed/false.
   """
-  @spec keyboard_up(keyboard :: %Keyboard{}, index :: integer) :: %Keyboard{}
-  def keyboard_up(%Keyboard{} = keyboard, index) do
+  @spec keyboard_up(keyboard :: %__MODULE__{}, index :: integer) :: %__MODULE__{}
+  def keyboard_up(%__MODULE__{} = keyboard, index) do
     updated_keyboard_list = keyboard.keyboard |> Map.replace!(index, false)
     Map.put(keyboard, :keyboard, updated_keyboard_list)
   end
@@ -90,8 +89,8 @@ defmodule ExChip8.Keyboard do
   @doc """
   Get pressed-status of specified index.
   """
-  @spec keyboard_is_down(keyboard :: %Keyboard{}, key :: integer) :: boolean
-  def keyboard_is_down(%Keyboard{} = keyboard, key) do
+  @spec keyboard_is_down(keyboard :: %__MODULE__{}, key :: integer) :: boolean
+  def keyboard_is_down(%__MODULE__{} = keyboard, key) do
     keyboard.keyboard |> Map.get(key, false)
   end
 end
