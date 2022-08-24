@@ -98,11 +98,11 @@ defmodule ExChip8.Screen do
       end)
       |> List.flatten()
 
-    changeset
-    |> Enum.reduce(screen, fn {x, y}, updated_screen ->
-      screen_unset(updated_screen, x, y)
-      |> update()
-    end)
+    for {x, y} <- changeset, reduce: screen do
+      updated_screen ->
+        screen_unset(updated_screen, x, y)
+        |> update()
+    end
 
     :ok
   end
@@ -141,18 +141,18 @@ defmodule ExChip8.Screen do
   def screen_draw_sprite(%__MODULE__{} = screen, attrs) do
     changeset = screen_draw_sprite_changeset(screen, attrs)
 
-    changeset
-    |> Enum.reduce(screen, fn c, updated_screen ->
-      {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
+    for c <- changeset, reduce: screen do
+      updated_screen ->
+        {:update, %{collision: _, pixel: pixel, x: x, y: y}} = c
 
-      if pixel do
-        screen_set(updated_screen, x, y)
-        |> update()
-      else
-        screen_unset(updated_screen, x, y)
-        |> update()
-      end
-    end)
+        if pixel do
+          screen_set(updated_screen, x, y)
+          |> update()
+        else
+          screen_unset(updated_screen, x, y)
+          |> update()
+        end
+    end
 
     collision =
       changeset

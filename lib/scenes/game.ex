@@ -234,15 +234,18 @@ defmodule ExChip8.Scenes.Game do
   """
   @spec draw_tile(any(), list(pixel_change()), on: boolean()) :: :ok
   def draw_tile(screen, changes, on: on) do
-    Enum.reduce(changes, screen, fn {x, y, _}, acc ->
-      Enum.reduce(0..@chip8_tile_size, acc, fn x_offset, acc ->
-        Enum.reduce(0..@chip8_tile_size, acc, fn y_offset, acc ->
-          x_coord = x * @chip8_tile_size + x_offset
-          y_coord = y * @chip8_tile_size + y_offset
-          draw_pixel(acc, x_coord, y_coord, on)
-        end)
-      end)
-    end)
+    for {x, y, _} <- changes, reduce: screen do
+      acc ->
+        for x_offset <- 0..@chip8_tile_size, reduce: acc do
+          acc ->
+            for y_offset <- 0..@chip8_tile_size, reduce: acc do
+              acc ->
+                x_coord = x * @chip8_tile_size + x_offset
+                y_coord = y * @chip8_tile_size + y_offset
+                draw_pixel(acc, x_coord, y_coord, on)
+            end
+        end
+    end
 
     :ok
   end
