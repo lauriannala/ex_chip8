@@ -13,6 +13,8 @@ Chip8 emulator written with Elixir using Scenic.
 ```shell
 # Scenic deps installation:
 sudo apt-get install pkgconf libglfw3 libglfw3-dev libglew2.1 libglew-dev
+# On mac:
+brew install glfw3 glew pkg-config
 ```
 
 ## Using release binary
